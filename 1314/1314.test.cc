@@ -23,9 +23,12 @@
 // just remove the first row, and add an new row
 // when considering ret[2][?]
 
-#include <algorithm>
-#include <vector>
 #include <numeric>
+#include <vector>
+#include <iostream>
+#include <iomanip>
+
+using namespace std;
 
 class Solution {
   public:
@@ -87,3 +90,60 @@ class Solution {
       return ret;
     } // vector<vector<int>> matrixBlockSum(vector<vector<int>>& mat, int K)
 };
+
+int main( int argc, char** argv ){
+
+  int col = 0, row = 0;
+  cout << "rows?" << endl;
+  if ( cin >> row ){
+    cout << "cols?" << endl;
+    if (!( cin >> col )){
+      cout << "RTFM" << endl;
+      return 1;
+    }
+  }else {
+    cout << "RTFM" << endl;
+    return 1;
+  }
+
+  vector<vector<int>> mat;
+  for( int i = 0; i < row; ++i ){
+    vector<int> tmpVec;
+    cout << "row " << i << endl;
+    for( int j = 0; j < col; ++j ){
+      int tmp = 0;
+      if ( cin >> tmp ){
+        tmpVec.push_back(tmp);
+      }else{
+        cout << "RTFM" << endl;
+        return 1;
+      }
+    }
+    mat.emplace_back(tmpVec);
+  }
+
+  cout << endl << "original:" << endl;
+  ios_base::fmtflags cout_flags( cout.flags() );
+  for( auto& r : mat ){
+    for( auto& e : r ){
+      cout << left << setw(7) << e;
+    }
+    cout << endl;
+    cout.flags ( cout_flags );
+  }
+
+  cout << endl << endl << "operated:" << endl;
+
+  // test start here
+  Solution s;
+  mat = s.matrixBlockSum ( mat, 1 );
+  for( auto& r : mat ){
+    for( auto& e : r ){
+      cout << left << setw(7) << e;
+    }
+    cout << endl;
+    cout.flags ( cout_flags );
+  }
+
+  return 0;
+}
