@@ -64,12 +64,12 @@ bool isBipartite(int** graph, int graphSize, int* graphColSize){
   for( int i = 0; i < graphSize; ++i ){
     if ( graphColor[i] == NOCOLOR ) {
       graphColor[i] = LIGHTGREY;
-    }else{
       if ( !isBipartiteDfsCheck (graph, graphSize, graphColSize, graphColor, i ) ){
         return false;
       }
     }
   }
+  free ( graphColor );
   return true;
 }
 
@@ -89,22 +89,50 @@ bool isBipartiteDfsCheck (int** graph, int graphSize, int* graphColSize, myColor
 #endif
   }
 
-  for( int i = 0; i < graphColSize[id]; ++i ){
+  int i = 0;
+  for( ; i < graphColSize[id]; ++i ){
     if ( colorCollide ( graphColor[id], graphColor[graph[id][i]] ) ){
       // color collsion, (grey to grey) or (red to red), it's not bipartite.
       return false;
-    }else if ( colorPair ( graphColor[id], graphColor[graph[id][i]] ) ){
-      // somebody is already walking this path, and they'll check'em for us.
-      return true;
-    }else{
-      // "graphColor[graph[id][i]]" is NOCOLOR
-      // hence we color it
+    }
+  }
+
+  i = 0;
+  for( ; i < graphColSize[id]; ++i ){
+    if ( colorPair ( graphColor[id], graphColor[graph[id][i]] ) ){
+      // somebody is checking, let'em do this for us.
+      continue;
+    }else {
       graphColor[graph[id][i]] = tmpColor;
-      if ( !isBipartiteDfsCheck (graph, graphSize, graphColSize, graphColor, graph[id][i] ) ){
+      if( !isBipartiteDfsCheck ( graph, graphSize, graphColSize, graphColor, graph[id][i] ) ){
         return false;
       }
     }
   }
   darken( graphColor + id );
   return true;
+}
+
+#include <stdio.h>
+
+int main() {
+  int** graph = calloc ( 4, sizeof(int*) );
+  int   arr0[3] = {1,2,3};
+  int   arr1[2] = {0,2};
+  int   arr2[3] = {0,1,3};
+  int   arr3[2] = {0,2};
+  graph[0] = arr0;
+  graph[1] = arr1;
+  graph[2] = arr2;
+  graph[3] = arr3;
+  int   arrs[4] = {3,2,3,2};
+  int*  graphColSize = arrs;
+
+  if (isBipartite(graph, 4, graphColSize) ){
+    printf ( "success\n" );
+    return 0;
+  }
+
+  printf ( "failure\n" );
+  return 1;
 }
