@@ -46,7 +46,7 @@ int heightHelper( struct TreeNode* tnptr, int* sizeP ){
 }
 
 char** at( char*** arr, int row, int col ){
-   return (*(arr+row*col))+col;
+   return (*(arr+row))+col;
 }
 
 void postOrderTraverse( struct TreeNode* subRoot, char*** arr, char* buf, int height, int currentHeight, int col, int subRootIdx ){
@@ -120,12 +120,9 @@ char *** printTree(struct TreeNode* root, int* returnSize, int** returnColumnSiz
     *.*.*.*.*.*.*.*
     */
 
-   returnSize = malloc( sizeof(*returnSize) * 1 );
    *returnSize = treeHeight;
-   returnColumnSizes = malloc( sizeof(*returnColumnSizes) * treeHeight );
    for( int i = 0; i < treeHeight; ++i ){
-      returnColumnSizes[i] = malloc( sizeof(**returnColumnSizes) );
-      *(returnColumnSizes[i]) = columns;
+      (*returnColumnSizes)[i] = columns;
    }
 
    char*** ret = malloc( sizeof(*ret) * (*returnSize) );
