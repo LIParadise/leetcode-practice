@@ -23,22 +23,24 @@ int main (){
    root -> right -> right -> right = NULL;
 
    int a = 0;
-   int *b = malloc ( sizeof(*b) * 2 );
+   int *b = NULL;
 
    char*** arr = printTree( root, &a, &b );
 
    for( int i = 0; i < a; ++i ){
       for( int j = 0; j < b[i]; ++j ){
-         printf( "%s ", *at( arr, i, j) );
+         printf( "\"%s\",", arr[i][j] );
       }
-      printf("\n");
+      printf("\b\n");
    }
 
    for( int i = 0; i < a; ++i ){
       for( int j = 0; j < b[i]; ++j ){
-         free( *at( arr, i, j) );
+         free( arr[i][j] );
       }
+      free( arr[i] );
    }
+   free( arr);
    free ( b);
 
    free ( root -> right -> right );

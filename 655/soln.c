@@ -45,10 +45,6 @@ int heightHelper( struct TreeNode* tnptr, int* sizeP ){
    return ( tmpHeightRight>= tmpHeightLeft )? tmpHeightRight : tmpHeightLeft;
 }
 
-char** at( char*** arr, int row, int col ){
-   return (*(arr+row))+col;
-}
-
 void postOrderTraverse( struct TreeNode* subRoot, char*** arr, char* buf, int height, int currentHeight, int col, int subRootIdx ){
    // `buf` is a char[65], which is defined by the caller
    // let's hope it's enough...
@@ -89,14 +85,14 @@ void postOrderTraverse( struct TreeNode* subRoot, char*** arr, char* buf, int he
             height,
             currentHeight-1,
             col, 
-            subRootIdx-(1<<(currentHeight-2)) );
+            subRootIdx+(1<<(currentHeight-2)) );
    }
    memset( buf, '\0', 65*sizeof(char) );
    int l = sprintf( buf, "%d", subRoot -> val );
 
-   *at(arr, height-currentHeight, subRootIdx) =
-      realloc ( *at(arr, height-currentHeight, subRootIdx),
-            l*sizeof( **at(arr, height-currentHeight, subRootIdx) ) );
+   arr[height-currentHeight][subRootIdx] =
+      realloc ( arr[height-currentHeight][subRootIdx],
+            (l+1)*sizeof( *arr[height-currentHeight][subRootIdx] ) );
 
    memcpy( arr[height-currentHeight][subRootIdx], buf, l+1 );
 }
@@ -104,32 +100,33 @@ void postOrderTraverse( struct TreeNode* subRoot, char*** arr, char* buf, int he
 char *** printTree(struct TreeNode* root, int* returnSize, int** returnColumnSizes){
    int treeSize = 0;
    const int treeHeight = heightHelper ( root, &treeSize);
+   const int columns    = (1<<treeHeight)-1;
    char buf[65];
-   const int columns = (1<<treeHeight)-1;
    /* suppose height is 4 (including node)
       then it will be like:
-      ...3...
-      .1...5.
-    *.*.*.*
+   //  ...3...
+   //  .1...5.
+   //  X.X.X.X
     that is, `returnSize` shall be 3,
     `returnColumnSizes` shall be 2^3-1,
     e.g.: height = 4:
-    .......7.......
-    ...3.......B...    returnSize: 4
-    .1...5...9...D.    returnColumnSizes: 2^4-1 = 15
-    *.*.*.*.*.*.*.*
+   //  .......7.......
+   //  ...3.......B...    returnSize: 4
+   //  .1...5...9...D.    returnColumnSizes: 2^4-1 = 15
+   //  X.X.X.X.X.X.X.X
     */
 
    *returnSize = treeHeight;
+   *returnColumnSizes = malloc( sizeof( **returnColumnSizes ) * treeHeight );
    for( int i = 0; i < treeHeight; ++i ){
       (*returnColumnSizes)[i] = columns;
    }
 
-   char*** ret = malloc( sizeof(*ret) * (*returnSize) );
+   char*** ret = malloc( sizeof(*ret) * treeHeight );
    for( int i = 0; i < (*returnSize); ++i ){
-      ret[i] = malloc( sizeof(*ret[i]) * columns );
+      ret[i] = malloc( sizeof(*(ret[i])) * columns );
       for( int j = 0; j < columns; ++j ){
-         ret[i][j] = calloc( sizeof(*ret[i][j]), 1 );
+         ret[i][j] = calloc( 1, sizeof(*ret[i][j]) );
       }
    }
 
