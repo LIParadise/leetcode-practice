@@ -7,7 +7,4 @@ class Solution {
 
     private:
         std::vector<double> dp_arr;
-#ifdef LIPARADISE_DBG
-        void dump();
-#endif // LIPARADISE_DBG
 };
