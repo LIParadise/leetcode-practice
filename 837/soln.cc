@@ -16,108 +16,82 @@
 #include "soln.h"
 #include <algorithm>
 #include <cstddef>
-#include <iomanip>
-#include <iostream>
-#include <ostream>
+#include <numeric>
 #include <utility>
 
-/*
- * Suppose we want to solve for new21Game(n, k, M)
- * Conceptually, we maintain a {n \times k} table P
- * s.t. P(n, k) = new21Game(n, k, M)
- * Observe that columns in P(n, k) is CDF, s.t. when fix k = K,
- * P(i, K) <= P(j, K) iff i <= j.
+/* Follow method provided by lee215@leetcode
+ * https://leetcode.com/problems/new-21-game/discuss/132334/One-Pass-DP-O(N)
  *
- * Not all entries in the {n \times k} table P are non-trivial.
- * Observe that given k = K, only { P(i, K) | i \in [K, K+M-1) } is
- * non-trivial,
- * alternatively, given n = N, only { P(N, i) | i \in (N-M+1, N] }
- * are non-trivial.
- * (Notice the difference between {[x, y]} and {(x, y)})
- * All the other entries are "trivial", in that they
- * equal to either 0.0 or 1.0.
+ * First, note that when given K and M, "new21Game(i, K, M)" is only
+ * interesting when {i \in [K, K+M-1)}, otherwise the result is just
+ * 1.0 or 0.0
  *
- * Upon further observation, one notices that updating entries can be done
- * in a sequential manner, which means one only need an array
- * of which length is "maxPts-1".
- * The { -1 } comes from the fact that to fully determine a PMF/CDF with known
- * set of finite supports (let's say {n} points), we only need to know the
- * probability mass of {n-1} of them.
+ * We'll do dynamic programming where we maintain the probability that
+ * some integer "i" is to be sum of some card combination,
+ * where {i \in [1, K+M-1]},
+ * with the constraint we stop draw cards when {i \geq K}.
+ * (Denote them as P(i))
  *
- * Back to the conceptual table P.
- * Suppose we know P[i, j]; what's the relation between it and P[i, j+1]?
- * (Let's assume P[i, j] and P[i, j+1] are both non-trivial)
+ * The cards come from uniform i.i.d distribution.
+ * Observe that once all P(i) are collected, a simple Bayes' Theorem
+ * gives the answer to "new21Game(n, K, M)", that is,
+ * let "bayes_whole_prob" be
+ * {
+ *      {\sum\limits_{i=K}^{K+M-1}{P(i)}
+ * }
+ * and "bayes_subset_prob" be
+ * {
+ *      {\sum\limits_{i=K}^{N}{P(i)}
+ * }
+ * Then we just return "bayes_subset_prob/bayes_whole_prob".
  *
- * Let the card combinations that are to be counted in P[i, j] be C_{i, j}
- * P[i, j+1] be C_{i, j+1}, correspondingly.
- * C_{i, j} is the disjoint union of the following 2 sets:
- * One subset is those sum to j with the last card,
- * one subset is those sum to strictly larger than j with the last card.
- *
- * Consider C_{i, j+1}.
- * The latter subset falls entirely in C_{i, j+1},
- * while the former has fixed proportion to be classified as in C_{i, j+1},
- * with the addition of one more card to be drawn.
- * Why does the former behave as such?
- * By definition they sum to j, hence one more card is drawn, and as such
- * the combination would be in C_{i, j+1} iff the last card is in
- * {[1, i-j]}.
- *
- * One can check that C_{i, j+1} is comprised exactly of these
- * 2 kinds of combinations.
- *
- * Based on these we can do dynamic programming.
+ * Notice that for {i < K}, P(i) can be obtained by
+ * {
+ *      {\sum\limits_{j=i-M}^{i-1}{P_j}} \times
+ *      {\frac{1}{M}}
+ * }
+ * The reason is again Bayes' theorem; want to sum to i?
+ * Then consider (prob that sum to i-1) * (prob that draw 1)
+ *               (prob that sum to i-2) * (prob that draw 2)
+ *               (prob that sum to i-3) * (prob that draw 3)
+ * so on and so forth
  */
 double Solution::new21Game(int n, int k, int maxPts) {
-    if (k == 0 || n >= k + maxPts - 1) {
+    // Input range assumptions:
+    // 0 <= k <= n <= 10^4
+    // 1 <= maxPts <= 10^4
+
+    if (n >= k + maxPts - 1 || k == 0) {
         return 1.0;
     } else if (n < k) {
         return 0.0;
     }
-    const double cp = 1.0 / ((double)maxPts); // uniform Card Probability
-    dp_arr.resize(maxPts - 1);
-    std::transform(
-        dp_arr.begin(), dp_arr.end(), dp_arr.begin(),
-        [&cp, this](auto &a) { return cp * ((&a - &dp_arr.at(0)) + 1); });
-#ifdef LIPARADISE_DBG
-    std::cout << "assume k is " << std::setw(2) << 1 << ": ";
-    dump();
-#endif // LIPARADISE_DBG
-    for (int i = 2; i <= k; ++i) {
-        const double prob_eq = *dp_arr.begin();
-        // "prob_eq" denotes new21Game(i, i, maxPts)
-        // Alternatively, using the terminology from above, P[i, i]
-        // I.e. the probability that given we draw cards till no less than {i},
-        // the probability that the sum is exactly i.
-        // Hence the name, "probability of equality".
-        for (std::size_t s = 0; s < dp_arr.size(); ++s) {
-            const double subset_more =
-                (-1.0) * prob_eq +
-                ((s == dp_arr.size() - 1) ? 1.0 : dp_arr.at(s + 1));
-            // "subset_more" denotes the probability of the second subset,
-            // i.e. card combinations which sum to strictly larger than {i}.
-            // Refer to the disjoint union analysis above.
-            dp_arr.at(s) = (double)(s + 1) * cp * prob_eq + subset_more;
-        }
-#ifdef LIPARADISE_DBG
-        std::cout << "assume k is " << std::setw(2) << i << ": ";
-        dump();
-#endif // LIPARADISE_DBG
-    }
-#ifdef LIPARADISE_DBG
-    std::cout << "ans: " << dp_arr.at(n - k) << std::endl;
-#endif // LIPARADISE_DBG
-    return dp_arr.at(n - k);
-}
 
-#ifdef LIPARADISE_DBG
-void Solution::dump() {
-    std::ios_base::fmtflags orig_cout_flags(std::cout.flags());
-    for (size_t s = 0; s < dp_arr.size(); ++s) {
-        std::cout << std::right << std::setw(10) << std::setprecision(4)
-                  << dp_arr.at(s);
+    dp_arr = std::vector<double>(maxPts + 1, 0.0);
+    const double cardProb = 1.0 / ((double)maxPts);
+    dp_arr.front() = 1.0;
+    double sum_of_dp_arr = dp_arr.front();
+
+    // Bayes' theorem
+    for (std::size_t i = 1; i < k + maxPts; ++i) {
+        const double prob_of_i = sum_of_dp_arr * cardProb;
+        if (i >= maxPts) {
+            sum_of_dp_arr -= dp_arr.at((i - maxPts) % dp_arr.size());
+        }
+        if (i < k) {
+            sum_of_dp_arr += prob_of_i;
+        }
+        dp_arr.at(i % dp_arr.size()) = prob_of_i;
     }
-    std::cout << std::endl;
-    std::cout.flags(orig_cout_flags);
+
+    double bayes_whole_prob = 0.0;
+    for (std::size_t s = k; s <= k + maxPts - 1; ++s) {
+        bayes_whole_prob += dp_arr.at(s % dp_arr.size());
+    }
+    double bayes_subset_prob = 0.0;
+    for (std::size_t s = k; s <= n; ++s) {
+        bayes_subset_prob += dp_arr.at(s % dp_arr.size());
+    }
+
+    return bayes_subset_prob / bayes_whole_prob;
 }
-#endif // LIPARADISE_DBG
