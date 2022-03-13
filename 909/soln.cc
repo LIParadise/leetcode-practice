@@ -5,7 +5,7 @@
 #include <tuple>
 
 namespace SolutionHelper {
-std::pair<std::size_t, std::size_t>
+inline std::pair<std::size_t, std::size_t>
 boardIndexTranslator(const std::size_t n, const std::size_t idx) {
     std::size_t row_idx = n - ((idx - 1) / n) - 1;
     std::size_t col_idx;
@@ -24,10 +24,9 @@ int Solution::snakesAndLadders(std::vector<std::vector<int>> &board) {
                                            std::vector<int>(board.size(), -1));
     std::size_t row_idx, col_idx;
     std::queue<std::pair<std::size_t, int>> bfsQ;
-    for (std::size_t s = 1; s <= 6 && ((s - 1) / board.size()) < board.size();
-         ++s) {
-        bfsQ.push(std::make_pair(s, 1));
-    }
+    bfsQ.push(std::make_pair(1, 0));
+    // first: the snake Boustrophedon index to start from
+    // second: the steps required
     while (!bfsQ.empty()) {
         std::size_t boardIdx;
         int steps;
@@ -54,7 +53,7 @@ int Solution::snakesAndLadders(std::vector<std::vector<int>> &board) {
         }
     }
 
-    row_idx = 0;
-    col_idx = (board.size() % 2) ? (board.size() - 1) : 0;
+    std::tie(row_idx, col_idx) =
+        idxTrans(board.size(), board.size() * board.size());
     return bfsTable.at(row_idx).at(col_idx);
 }
