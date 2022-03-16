@@ -16,26 +16,22 @@ int Solution::deleteAndEarn(std::vector<int> &nums) {
     /* Dynamic programming
      *
      * Suppose we have {k} distinct numbers, {n_1, n_2, ..., n_k},
-     * we can store a {k \times k} table (let the table be T)
-     * s.t. T[i][j] marks the answer to the {n_i, n_{i+1}, ..., n_{j}}
-     * For example, suppose "nums" is the following
-     * [1, 1, 3, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6]
-     * Then T[2][3] stores the answer to the following:
-     *       [3, 4, 5, 5, 5, 5, 5, 5]
-     * Notice first that in "T", it stores the order statistics, not the
-     * actual number in "nums"
-     * Notice further that {i \leq j} always holds.
-     * (We only need to store half of a square matrix)
+     * consider atomic case, i.e. {k = 1} and all numbers are just {n_1}
+     * then we just return the sum of `nums`.
      *
-     * Suppose we know T[i][j] and T[j+1][k], what's T[i][k]?
-     * If the j-th smallest and the (j+1)-th smallest differ by
-     * larger or equal to 2, then T[i][k] = T[i][j] + T[j+1][k]
-     * (The ordering is done ignoring all equal terms)
+     * Suppose we've solved {k = N}, consider {k = N+1}
+     * Then there are 3 cases.
+     * 1. both {n_N} and {n_{N+1}} are taken
+     * 2.(a) {n_N} is taken, while {n_{N+1}} is not.
+     * This means the result is exactly the same as when {k=N}.
+     * 2.(b) {n_{N+1}} is taken, while {n_N} is discarded.
+     * Which means the result becomes (that of {k={N-1}}) plus
+     * (sum of {n_{K+1}}).
      *
-     * If the j-th and the (j+1)-th differ by 1,
-     * then we need to consider 2 candidates,
-     * one being T[i][j-1] + T[j+1][k], one being T[i][j] + T[j+2][k].
-     * Those T[m][n] with {m > n} are deemed as 0.
+     * Case 1 happens only when {n_N + 1 < n_{N+1}}
+     * Case 2 happens when {n_N + 1 == n_{N+1}}
+     * There can't be the case when both {n_N} and {n_{N+1}} are
+     * not taken, since they are different numbers.
      */
 
     std::sort(nums.begin(), nums.end());
@@ -46,65 +42,34 @@ int Solution::deleteAndEarn(std::vector<int> &nums) {
             ++j;
         }
     }
-    TriangularMatrix T(distinct_terms);
-    std::vector<int> values(distinct_terms, 0);
-    std::size_t idx = 0;
-    for (auto itor_0 = nums.begin(), itor_1 = nums.begin();
-         itor_1 != nums.end(); itor_0 = itor_1, ++idx) {
-        int sum = 0;
-        while (itor_1 != nums.end() && *itor_1 == *itor_0) {
-            sum += *itor_1;
-            ++itor_1;
+    std::vector<int> sumOfIndividualTerms(distinct_terms, 0);
+    std::vector<int> ansOfSubproblems(distinct_terms, 0);
+    std::vector<int> individualTerms(distinct_terms, 0);
+    for (auto n = nums.begin(), m = nums.begin(),
+              s = sumOfIndividualTerms.begin(), i = individualTerms.begin();
+         m < nums.end(); n = m) {
+        while (m < nums.end() && *m == *n) {
+            ++m;
+            *s += *n;
         }
-        T.set(idx, idx, sum);
-        values.at(idx) = *itor_0;
+        *i = *n;
+        ++s;
+        ++i;
     }
-
-    for (idx = 1; idx < distinct_terms; ++idx) {
-        for (std::size_t offset = 0; offset < distinct_terms - idx; ++offset) {
-            // Calculate the subproblem T[row][col]
-            // of which values range from the (row)-th smallest to the (col)-th
-            const std::size_t row = offset;
-            const std::size_t col = offset + idx;
-            int sum = 0;
-
-            // For T[row][col], there are many ways to cut subproblem.
-            // For each subproblem, there are 4 cases to consider.
-            // 1. They are "disjoint", i.e. in sorted array, they differ by
-            // larger than scalar 1
-            // which means both (m) and (m+1) could be taken
-            // 2. They are not disjoint, i.e. in sorted array, they differ by
-            // exactly scalar 1
-            // 2.(a) choose (m), discard (m+1)
-            // 2.(b) choose (m+1), discard (m)
-            // 2.(c) discard both (m) and (m+1)
-            for (std::size_t s = 0; s < idx; ++s) {
-                const std::pair<std::size_t, std::size_t> lhs =
-                    std::make_pair(row, row + s);
-                decltype(lhs) rhs = std::make_pair(row + s + 1, col);
-                int tmpSum = 0;
-                const int case1 =
-                    T.at(lhs.first, lhs.second) + T.at(rhs.first, rhs.second);
-                const int case2a = T.at(lhs.first, lhs.second) +
-                                   T.at(rhs.first + 1, rhs.second);
-                const int case2b = T.at(lhs.first, lhs.second - 1) +
-                                   T.at(rhs.first, rhs.second);
-                const int case2c = T.at(lhs.first, lhs.second - 1) +
-                                   T.at(rhs.first + 1, rhs.second);
-                tmpSum = (values.at(lhs.second) + 1 < values.at(rhs.first) &&
-                          case1 > tmpSum)
-                             ? case1
-                             : tmpSum;
-                tmpSum = (case2a > tmpSum) ? case2a : tmpSum;
-                tmpSum = (case2b > tmpSum) ? case2b : tmpSum;
-                tmpSum = (case2c > tmpSum) ? case2c : tmpSum;
-                if (tmpSum > sum) {
-                    sum = tmpSum;
-                }
-            }
-            T.set(row, col, sum);
+    ansOfSubproblems.front() = sumOfIndividualTerms.front();
+    for (std::size_t N = 0; (N + 1) < distinct_terms; ++N) {
+        if (individualTerms.at(N) + 1 < individualTerms.at(N + 1)) {
+            // case 1
+            ansOfSubproblems.at(N + 1) =
+                ansOfSubproblems.at(N) + sumOfIndividualTerms.at(N + 1);
+        } else {
+            // case 2
+            const int case2a = ansOfSubproblems.at(N);
+            const int case2b = ((N > 0) ? ansOfSubproblems.at(N - 1) : 0) +
+                               sumOfIndividualTerms.at(N + 1);
+            ansOfSubproblems.at(N + 1) = (case2a > case2b) ? case2a : case2b;
         }
     }
 
-    return T.at(0, distinct_terms - 1);
+    return ansOfSubproblems.back();
 }
