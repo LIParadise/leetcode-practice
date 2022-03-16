@@ -72,6 +72,9 @@ int Solution::deleteAndEarn(std::vector<int> &nums) {
             // For each subproblem, there are 4 cases to consider.
             // 1. They are "disjoint", i.e. in sorted array, they differ by
             // larger than scalar 1
+            // which means both (m) and (m+1) could be taken
+            // 2. They are not disjoint, i.e. in sorted array, they differ by
+            // exactly scalar 1
             // 2.(a) choose (m), discard (m+1)
             // 2.(b) choose (m+1), discard (m)
             // 2.(c) discard both (m) and (m+1)
