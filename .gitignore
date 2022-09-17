@@ -1,0 +1,6 @@
+# Rust objects
+target/
+debug/
+# Rust lock since I'm probably not launching binaries.
+# For libraries, as in Leetcode, we should ignore the lock
+Cargo.lock
