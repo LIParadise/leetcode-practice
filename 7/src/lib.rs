@@ -1,29 +1,36 @@
-pub trait LargeNum {
-    type Output;
-    const BASE: i32;
-    fn into(self) -> Option<Self::Output>;
-}
-
-impl LargeNum for &str {
-    type Output = i32;
-    const BASE: i32 = 10;
-    fn into(self) -> Option<Self::Output> {
-        if Self::BASE <= 0 {
-            return None;
-        }
-        let (pos, iter) = if '-' == self.chars().nth(0)? {
-            (false, self.chars().skip(1))
+struct MyI32(i32);
+impl From<&str> for MyI32 {
+    fn from(s: &str) -> Self {
+        const BASE_U: u32 = 10;
+        const BASE_I: i32 = 10;
+        use i32 as OutputType;
+        let (pos, mut iter) = if let Some('-') = s.chars().next() {
+            (false, s.chars().skip(1))
         } else {
-            (true, self.chars().skip(0))
+            (true, s.chars().skip(0))
         };
-        iter.fold(Some(0), |num, ch| {
-            let tmp = num.unwrap().checked_mul(Self::BASE)?;
+
+        match iter.try_fold(0, |num: i32, ch| {
+            let tmp = num.checked_mul(BASE_I)?;
             if pos {
-                tmp.checked_add(ch.to_digit(Self::BASE as u32).map(|u| u as Self::Output)?)
+                tmp.checked_add(ch.to_digit(BASE_U).map(|u| u as OutputType)?)
             } else {
-                tmp.checked_sub(ch.to_digit(Self::BASE as u32).map(|u| u as Self::Output)?)
+                tmp.checked_sub(ch.to_digit(BASE_U).map(|u| u as OutputType)?)
             }
-        })
+        }) {
+            Some(i) => i.into(),
+            None => 0.into(),
+        }
+    }
+}
+impl From<MyI32> for i32 {
+    fn from(i: MyI32) -> Self {
+        i.0
+    }
+}
+impl From<i32> for MyI32 {
+    fn from(i: i32) -> Self {
+        MyI32(i)
     }
 }
 
@@ -39,26 +46,14 @@ impl Solution {
                 .chain(x.to_string().chars().filter(|d| d.is_numeric()).rev())
                 .collect()
         };
-        if let Some(ret) = LargeNum::into(rev_x_preserve_sign.as_str()) {
-            ret
-        }else{
-            0
-        }
+        let ret: MyI32 = rev_x_preserve_sign.as_str().into();
+        ret.into()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::*;
-    #[test]
-    fn test_largenum() {
-        assert_eq!(Some(120), LargeNum::into("120"));
-        assert_eq!(Some(i32::MAX), LargeNum::into("2147483647"));
-        assert_eq!(Some(i32::MIN), LargeNum::into("-2147483648"));
-        assert_eq!(Some(-1), LargeNum::into("-1"));
-        assert_eq!(None, LargeNum::into("2147483648"));
-        assert_eq!(None, LargeNum::into("9646324351"));
-    }
     #[test]
     fn test_solution() {
         assert_eq!(21, Solution::reverse(120));
