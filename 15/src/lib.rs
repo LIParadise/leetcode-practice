@@ -35,7 +35,6 @@ impl Solution {
         // Skip computation if the sum of the pair we choose
         // ([1st, 2nd], [1st, 3rd], etc) have positive sum.
 
-        // Make unique and read-only
         let mut nums = nums;
         nums.sort_unstable();
         let nums = nums;
@@ -71,6 +70,8 @@ impl Solution {
                     }
                     ret
                 });
+
+        // Uniqueness of triplet
         ret.sort_unstable_by(|triplet_i, triplet_j| {
             // dictionary order
             // compare only first two is enough since sum is 0
