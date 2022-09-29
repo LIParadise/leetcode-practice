@@ -1,0 +1,61 @@
+struct Solution;
+
+impl Solution {
+    /// Find all unique triplets s.t. summation is 0.
+    /// Uniqueness: input may repeat.
+    ///
+    /// ```
+    /// let nums = vec![-1,0,1,2,-1,-4];
+    /// let input = vec![-1, 0, 1, 2, -1, -4];
+    /// let output = vec![vec![-1, -1, 2], vec![-1, 0, 1]];
+    /// assert_eq!(output, Solution::three_sum(input));
+    /// let input = vec![0, 1, 1];
+    /// let output: Vec<Vec<i32>> = Vec::new();
+    /// assert_eq!(output, Solution::three_sum(input));
+    /// let input = vec![0, 0, 0];
+    /// let output = vec![vec![0, 0, 0]];
+    /// assert_eq!(output, Solution::three_sum(input));
+    /// ```
+    pub fn three_sum(nums: Vec<i32>) -> Vec<Vec<i32>> {
+        // Sort the array first; supp. each x is a number
+        //
+        // Array: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        //
+        // First, consider what triplets would be valid if we insist two of the
+        // elements in triplet are exactly the 1st and the 2nd element.
+        //
+        // Array: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        //        ^^
+        //
+        // Since sorted, either start from last or binary search
+        // Range is in [2nd..]
+        //
+        // Array: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        //        ^^                      ...
+        // Array: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        //        ^^                 ^ (match!)
+        //
+        // Proceed to ask what if instead of [1st, 2nd, ?] we find s.t.
+        // [1st, 3rd, ?] sum to 0.
+        // Since sorted, start from last match, which is denoted by 'l'.
+        //
+        // Array: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        //        ^ ^               ^l
+        //
+        // We can trim unnecessary computation if the sum of the pair we choose
+        // ([1st, 2nd], [1st, 3rd], etc) have positive sum.
+        // The triplets are automatically unique if we make elements in input
+        // unique before computation.
+
+        // Make unique and back to read-only
+        let mut nums = nums;
+        nums.sort_unstable();
+        nums.dedup();
+        let nums = nums;
+
+        // The triplet is [i, j, k] where i <= j <= k
+        nums.iter().enumerate().fold(Vec::new(), |ret: Vec<Vec<i32>>, (idx, i)| {
+
+        })
+    }
+}
