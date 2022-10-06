@@ -16,36 +16,50 @@ pub struct Solution;
 impl Solution {
     pub fn combination_sum(candidates: Vec<i32>, target: i32) -> Vec<Vec<i32>> {
         // Dynamic Programming
-        // Since numbers could be re-used, supp. we chose c in candidates,
-        // then we'd have to solve (candidates, target-c), a similar problem!
-        use std::collections::BTreeSet as Set;
-        let target = target as usize;
-        let mut dp: Vec<Vec<Vec<i32>>> = Vec::with_capacity(target);
-        let candidates = {
-            let mut ret = candidates;
-            ret.sort_unstable();
-            ret
-        };
-        while dp.len() <= target {
-            // Each loop solve for problem with target equal to dp.len()
-            // I.e. subproblem with target less than dp.len() are ready
-            let mut set: Set<Vec<i32>> = Set::new();
-            for c in candidates.iter() {
-                if *c as usize > dp.len() {
-                    break;
-                } else if *c as usize == dp.len() {
-                    set.insert(vec![*c]);
-                } else {
-                    dp[dp.len() - *c as usize].iter().for_each(|vec| {
-                        set.insert({
-                            let mut ret = vec.clone();
-                            ret.insert(ret.partition_point(|i| c > i), *c);
-                            ret
+        // We can consider DP[i][j] where i in 0..candidates.len() and j in
+        // 1..=target, s.t. DP[i][j] represents the combinations that sum
+        // to j using only candidates with indices no more than i.
+        // DP structure is DP[i][j] = DP[i-1][j] + DP[i][j-candidates[i]]
+        //
+        // Notice that we only reference the rows (i-1) and (i), hence the
+        // conceptually 2D table could be stored using 1D.
+
+        if target <= 0 {
+            return Vec::new();
+        }
+        let mut dp: Vec<Vec<Vec<i32>>> = Vec::with_capacity(target as usize);
+        for _ in 0..target {
+            dp.push(Vec::new())
+        }
+        for idx in 0..candidates.len() {
+            for sum in (1..=dp.len()).rev() {
+                if candidates[idx] as usize == sum {
+                    dp[sum - 1].push(vec![candidates[idx]]);
+                } else if (candidates[idx] as usize) < sum {
+                    let mut tmp = Vec::new();
+                    let mut repeat = 1;
+                    while sum > (candidates[idx] as usize * repeat) {
+                        let mut tmptmp = dp[sum - 1 - repeat * candidates[idx] as usize].clone();
+                        tmptmp.iter_mut().for_each(|vec| {
+                            for _ in 0..repeat {
+                                vec.push(candidates[idx]);
+                            }
                         });
-                    });
+                        tmp.extend(tmptmp);
+                        repeat += 1;
+                    }
+                    if sum % candidates[idx] as usize == 0 {
+                        tmp.extend({
+                            let mut tmptmp = Vec::with_capacity(sum % candidates[idx] as usize);
+                            for _ in 0..sum / candidates[idx] as usize {
+                                tmptmp.push(candidates[idx]);
+                            }
+                            vec![tmptmp]
+                        });
+                    }
+                    dp[sum - 1].extend(tmp);
                 }
             }
-            dp.push(set.into_iter().collect::<Vec<_>>())
         }
         dp.pop().unwrap()
     }
