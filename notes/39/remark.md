@@ -1,0 +1,3 @@
+# 39. Combination Sum
+
+It's worth investigate that the alternative solution seem much faster...
