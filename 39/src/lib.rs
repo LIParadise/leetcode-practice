@@ -16,6 +16,7 @@ pub struct Solution;
 impl Solution {
     pub fn combination_sum(candidates: Vec<i32>, target: i32) -> Vec<Vec<i32>> {
         // Dynamic Programming
+        //
         // We can consider DP[i][j] where i in 0..candidates.len() and j in
         // 1..=target, s.t. DP[i][j] represents the combinations that sum
         // to j using only candidates with indices no more than i.
@@ -28,14 +29,22 @@ impl Solution {
             return Vec::new();
         }
         let mut dp: Vec<Vec<Vec<i32>>> = Vec::with_capacity(target as usize);
+        // 1D DP table
+        // At the beginning of each iteration, the table stores answer to
+        // subproblem with different target sum, using only part of
+        // the given candidates.
+        // Specifically, `dp[0]` stores how to get sum 1,
+        // `dp[1]` stores how to get sum 2, so on and so forth.
         for _ in 0..target {
             dp.push(Vec::new())
         }
         for idx in 0..candidates.len() {
+            // Q: what new combinations could be achieved using this idx?
             for sum in (1..=dp.len()).rev() {
-                if candidates[idx] as usize == sum {
-                    dp[sum - 1].push(vec![candidates[idx]]);
-                } else if (candidates[idx] as usize) < sum {
+                if (candidates[idx] as usize) <= sum {
+                    // New candidate is only possible if it's not larger than
+                    // designated target sum.
+                    // Also, this problem explicity allows repeated selection
                     let mut tmp = Vec::new();
                     let mut repeat = 1;
                     while sum > (candidates[idx] as usize * repeat) {
