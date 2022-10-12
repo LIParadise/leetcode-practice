@@ -14,24 +14,24 @@ impl Solution {
         // 1 <= nums.length <= 100
         // 0 <= nums[i] <= 400
 
-        let mut take = *nums.first().expect("Expected non-zero length");
-        if take < 0 {
-            take = 0;
+        let mut ans = *nums.first().expect("Expected non-zero length");
+        if ans < 0 {
+            ans = 0;
         }
-        let mut ignr = 0;
+        let mut prev_ans = 0;
         for i in nums.iter().skip(1) {
             /*
-             * take => max revenue if last index were a rob
-             * ignr => max revenue if last index were ignored, i.e. NOT robbed
+             * ans => maximum possible with indices up to previous of i
+             * prev_ans => maximum possible with indices up to previous of ans
              */
-            let new_take = std::cmp::max(i + ignr, take);
-            ignr = take;
-            take = new_take;
+            let new_ans = std::cmp::max(i + prev_ans, ans);
+            prev_ans = ans;
+            ans = new_ans;
         }
         /*
-         * Notice take >= ignr throughout the loop
+         * Notice ans >= prev_ans throughout the loop
          */
-        take
+        ans
     }
 }
 
