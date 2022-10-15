@@ -1,0 +1,4 @@
+Equivalence classes correspond directly to traits `Eq` in Rust.
+A nice thing to remember is that if there's a quick way to find a representative for a equivalence class, one could calculate and cache the result, s.t. any subsequent equivalence check could be simpler.
+For example, this problem demands one to implement the following equivalence relationship: if one ASCII lowercase string is "hello", then since `'h' as u8 + 5 == 'm' as u8`, `'e' as u8 + 5 == 'j' as u8`, etc., we determine the strings are *offset* of eachother and should be considered equivalent.
+One can easily define a way to *choose* a representative for a equivalence class via requesting the string to begin with arbitrary fixed character, e.g. `'a'`, s.t. the equivalence classes could be denoted as `["", "a", "ab", "ac", ..., "az", "aaa", "aab", ..., "aaz", ...]`, where each `&str`, as a representative, denotes a *whole* equivalence class.
