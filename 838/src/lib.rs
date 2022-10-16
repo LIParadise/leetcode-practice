@@ -1,5 +1,18 @@
 pub struct Solution;
 
+/// A linear scan would do the trick.
+/// The key is that the dominoes could be parsed as several "RdL" substrings
+/// possibly one "[L.]*" at the beginning, and possibly one "[R.]*" at the end.
+/// Our job is to denote these segments somehow, and the rest is a no-brainer.
+///
+/// This struct record what happend before current domino.
+/// R(usize) records where last 'R' is,
+/// Null(usize) records *ONE PAST LAST* domino that's guaranteed NOT to change.
+///
+/// How is Null useful?
+/// E.g. when we have "R...L[RL.]*" dominoes, we can infer that such dominoes
+/// would become "R...L[RL.]*", in which case we record Null(5), dictating that
+/// for any domino happen at/after 5, they can NOT affect those before 5.
 enum State {
     R(usize),
     Null(usize),
