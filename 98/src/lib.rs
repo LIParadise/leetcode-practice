@@ -8,6 +8,27 @@ pub struct TreeNode {
     pub right: Option<Rc<RefCell<TreeNode>>>,
 }
 
+impl From<&[Option<i32>]> for TreeNode {
+    fn from(arr: &[Option<i32>]) -> Self {
+        if arr.len() == 0 {
+            panic!()
+        } else {
+            fn build_node(idx: usize, arr: &[Option<i32>]) -> Option<TreeNode> {
+                match arr.get(idx) {
+                    None => None,
+                    Some(&Some(val)) => Some(TreeNode {
+                        val,
+                        left: build_node(idx * 2 + 1, arr).map(|node| Rc::new(RefCell::new(node))),
+                        right: build_node(idx * 2 + 2, arr).map(|node| Rc::new(RefCell::new(node))),
+                    }),
+                    Some(None) => None,
+                }
+            }
+            build_node(0, arr).unwrap()
+        }
+    }
+}
+
 impl TreeNode {
     #[inline]
     pub fn new(val: i32) -> Self {
@@ -20,6 +41,7 @@ impl TreeNode {
 }
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::thread::panicking;
 
 struct Stack<T> {
     arr: Vec<T>,
@@ -63,9 +85,6 @@ impl StrictRangeChecker {
 }
 
 impl Solution {
-    fn check(node: Rc<RefCell<TreeNode>>, src: SRC) -> bool {
-        src.is_valid(node.borrow().val)
-    }
     pub fn is_valid_bst(root: Option<Rc<RefCell<TreeNode>>>) -> bool {
         match root {
             None => true,
@@ -95,9 +114,26 @@ impl Solution {
 
 #[cfg(test)]
 mod tests {
-    use crate::Solution;
+    use crate::{Solution, TreeNode};
+    use std::cell::RefCell;
+    use std::rc::Rc;
     #[test]
     fn test_soln() {
-        todo!()
+        let input = Some(Rc::new(RefCell::new(
+            <TreeNode as From<&[Option<i32>]>>::from(
+                [2, 1, 3]
+                    .into_iter()
+                    .map(|i| Some(i))
+                    .collect::<Vec<_>>()
+                    .as_slice(),
+            ),
+        )));
+        assert!(Solution::is_valid_bst(input));
+        let input = Some(Rc::new(RefCell::new(
+            <TreeNode as From<&[Option<i32>]>>::from(
+                &[Some(5), Some(1), Some(4), None, None, Some(3), Some(6)][..],
+            ),
+        )));
+        assert!(!Solution::is_valid_bst(input));
     }
 }
