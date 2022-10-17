@@ -9,6 +9,38 @@ impl Solution {
         *i = j.clone();
         *j = k;
     }
+
+    /// What's next, in terms of dictionary order, permutation of a sequence?
+    /// Wraps around.
+    // Since dictionary order and *next*, the more left a member is swapped,
+    // the *larger* the result would be.
+    // E.g. [1, 2, 3]
+    // If first were to be changed, making the result [2, ?, ?] or [3, ?, ?]
+    // This is *far* from the original string in terms of dictionary order.
+    //
+    // That is, if possible, focus on least significant bits, i.e. end of
+    // the sequence.
+    //
+    // If a reversed view gives an increasing sequence, then the original
+    // sequence is *max*, meaning we should return *min*; just reverse it!
+    //
+    // If a reversed view is not an increasing sequence, there's a *drop*
+    // somewhere.
+    // E.g. [1, 3, 4, 6, 5, 2]
+    //             ^  ^ --> Here's a drop!
+    // To make a next permutation, notice the latter part, by our search
+    // criteria, using reversed view is a increasing sequence.
+    // I.e. in some sense this subsequence already attains maximum.
+    // It's like carry bit in addition!
+    // Hence, what we need to do is find a suitable element to do *carry*,
+    // i.e. the first element that's greater than 4.
+    /// ```
+    /// use lc_31_next_permutation::Solution as S;
+    /// let mut input = vec![1, 3, 4, 6, 5, 2];
+    /// let output = vec![1, 3, 5, 2, 4, 6];
+    /// S::next_permutation(&mut input);
+    /// assert_eq!(input, output);
+    /// ```
     pub fn next_permutation(nums: &mut Vec<i32>) {
         for idx in (0..nums.len() - 1).rev() {
             let jdx = idx + 1;
