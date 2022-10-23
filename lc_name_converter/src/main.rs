@@ -10,20 +10,18 @@ use std::env;
 use std::io::Write;
 use std::process::Command;
 
-const LIB_RS_CONTENTS: &'static [&'static str] = &[
-    "pub struct Solution;",
-    "",
-    "impl Solution {}",
-    "",
-    "#[cfg(test)]",
-    "mod tests {",
-    "    use crate::Solution;",
-    "    #[test]",
-    "    fn test_soln() {",
-    "        todo!()",
-    "    }",
-    "}",
-];
+const LIB_RS_CONTENTS: &'static str = "pub struct Solution;
+    
+impl Solution {}
+
+#[cfg(test)]
+mod tests {
+    use crate::Solution;
+    #[test]
+    fn test_soln() {
+        todo!()
+    }
+}";
 
 fn main() {
     let pwd = env::current_dir()
@@ -31,12 +29,14 @@ fn main() {
     let arg: String = env::args().skip(1).collect();
     println!("You seem to want to solve LeetCode \"{arg}\"");
     let re_tokens = Regex::new(r"[[:space:]]?([[:word:]]*)\.?").unwrap();
-    let crate_dir_name = re_tokens
-        .captures(&arg)
-        .unwrap()
-        .get(1)
-        .map(|s| s.as_str())
-        .expect("Invalid name, abort.");
+    let mut crate_dir_name = String::from(
+        re_tokens
+            .captures(&arg)
+            .unwrap()
+            .get(1)
+            .map(|s| s.as_str())
+            .expect("Invalid name, abort."),
+    );
     if let Err(_) = crate_dir_name.trim().parse::<usize>() {
         println!("Invalid name, abort.");
     }
@@ -44,6 +44,9 @@ fn main() {
     crate_name.push_str(&re_tokens.replace_all(&arg, "_$1"));
     crate_name = crate_name.to_lowercase();
 
+    while std::path::Path::new(&crate_dir_name).exists() {
+        crate_dir_name.push_str("_rust");
+    }
     println!(
         "Create crate \"{crate_dir_name}\" in {}? (y/N)",
         pwd.display()
@@ -77,7 +80,7 @@ fn main() {
         .truncate(true)
         .open(&lib_rs_filename)
         .expect("Cannot work with lib.rs???");
-    for line in LIB_RS_CONTENTS {
+    for line in LIB_RS_CONTENTS.split('\n') {
         writeln!(&mut lib_rs, "{}", line).unwrap();
     }
 }
