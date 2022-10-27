@@ -11,7 +11,7 @@ use std::io::Write;
 use std::process::Command;
 
 const LIB_RS_CONTENTS: &'static str = "pub struct Solution;
-    
+
 impl Solution {}
 
 #[cfg(test)]
