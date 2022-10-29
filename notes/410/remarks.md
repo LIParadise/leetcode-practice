@@ -67,3 +67,9 @@ This, however, is again not true: consider the following:
 The `[99, 1]` and `[1, 99]` are not critical, i.e. 2 intervals that are not critical, yet this config has the lowest possible supremum. This illustrates that not all problems presents their optimal solution as set of critical intervals.
 
 The converse is also not true, i.e. all intervals being critical doesn't guarantee optimal solution; consider the example from last attempt: `[[2, 4], [3, 4], [4, 6]]`.
+
+## Attempt: Greedy Consume
+
+Build the answer from # of subarr is `2` to `k`.
+Notice for `2` the two subarr must be *critical* as defined earlier. Proof left as practice.
+For `3` to `k`, starting from the boundary of the largest partition, while less than average, grow the interval via grabbing element from the larger of the neighbors, without making either of them empty. If empty, i.e. either side is single element interval, try other partition.
