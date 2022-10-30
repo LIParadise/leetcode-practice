@@ -6,7 +6,7 @@ pub mod permutation {
     /// If it's already last dictionary order i.e. largest, returns false
     /// and input is not modified.
     /// ```
-    /// use lc_51_n__queens::permutation;
+    /// use lc_51_n_queens::permutation;
     /// let mut input = [1, 3, 4, 6, 5, 2];
     /// let ans = [1, 3, 5, 2, 4, 6];
     /// assert!(permutation::next_perm(&mut input));
