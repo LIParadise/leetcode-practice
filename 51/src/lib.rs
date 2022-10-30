@@ -25,7 +25,7 @@ pub mod permutation {
     // why?
     // notice that subarr [6, 5, 2] is in maximal config in dictionary order,
     // i.e. its next dictionary permutation require a *carry* over 4
-    // how? in [6, 5, 2], 5 is larger than 4, so that's it!
+    // how? in [6, 5, 2], 5 inf of those who larger than 4, so that's it!
     // after carry it's [5, 2, 4, 6], concate with remaining part we get
     // [1, 3, 5, 2, 4, 6] as desired.
     //
