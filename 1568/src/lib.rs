@@ -129,11 +129,34 @@ impl Solution {
             total_island_size: usize,
         }
         impl<'a> WeakStrongHelper<'a> {
+            /// Assuming all land have same non-zero value and all sea are 0, return if there's
+            /// 1-day soln.
+            /// If there's no 1-day soln, all land would still have the same value, except that the
+            /// value might change, e.g. all 42 becomes all 69.
+            /// If there's 1-day soln, the land would have two different values: based on the
+            /// viable remove grid, 1-day soln separates the once united land into 2, and one part
+            /// would have m, the other part have (m+1).
+            /// E.g. if given all 42, and have 1-day soln, the land might become some connected 69
+            /// and some connected 70.
+            /// The grid of removal of the 1-day soln would have (m+1).
             fn is_one_day(&mut self) -> bool {
                 (0..self.grid.len())
                     .try_for_each(|r| {
                         (0..self.grid[r].len()).try_for_each(|c| {
                             if self.grid[r][c] != 0 && self.is_weak(r, c) {
+                                // loop-invariant:
+                                // Grid have one connected land, all marked some value, n.
+                                // If after removal of `self.grid[r][c]` (i.e. make it 0, sea) the
+                                // grid is still one connected land, then the grid is unchanged,
+                                // except that all land are now (n+1) (including `self.grid[r][c]`)
+                                // If after removal of `self.grid[r][c]` the grid changes from
+                                // united/connected to separated, then one part of it, modulo
+                                // `self.grid[r][c]`, would now have (n+1), while the other parts
+                                // have (n).
+                                //
+                                // Notice this function FAILS TO WORK UPON RETURN `true`:
+                                // since if there's 1-day soln then this function makes the once
+                                // same-valued-and-connected grids into different values
                                 self.grid[r][c] = 0;
                                 let (suspect_r, suspect_c) = if r > 0
                                     && c < self.grid[r - 1].len()
@@ -154,6 +177,16 @@ impl Solution {
                                 };
                                 let remaining_island_size =
                                     Self::island_size_from(self.grid, suspect_r, suspect_c);
+                                // Need to update the marker: since `Self::island_size_from`
+                                // modifies all those who are same value and connected by adding 1
+                                // to them, i.e. it counts maximally connected component based on
+                                // value rather than merely asking if it's 0,
+                                // need to update the value s.t. subsequent walk could work.
+                                // E.g. if we have a bunch of connected value 42, after calling
+                                // `Self::island_size_from` they would be 43.
+                                // If we don't update correspondingly to 43, for sake of
+                                // contradiction say we update to 1 rather than 43, subsequent walk
+                                // would deem this grid as NOT connected.
                                 self.grid[r][c] = self.grid[suspect_r][suspect_c];
                                 (self.first_island_size == remaining_island_size + 1)
                                     .then(|| ())
@@ -258,6 +291,9 @@ impl Solution {
                     _ => true,
                 }
             }
+            /// Given grid with content n, count how many maximally connected
+            /// neighbors are also n.
+            /// When done, all those counted grids would be marked (n+1).
             fn island_size_from(grid: &mut Vec<Vec<i32>>, r: usize, c: usize) -> usize {
                 let mut island_size = 0;
                 let mut dfs_stack = Vec::new();
