@@ -38,48 +38,40 @@ impl Solution {
     // Return maximum difference.
     pub fn width_of_binary_tree(root: Option<Rc<RefCell<TreeNode>>>) -> i32 {
         let mut index_pairs = Vec::new();
-        Self::dfs_traversal(root, 0, 0, &mut index_pairs);
-        index_pairs
-            .iter()
-            .max_by(|pair1, pair2| (pair1.1 - pair1.0).cmp(&(pair2.1 - pair2.0)))
-            .map(|(left, right)| (right - left) as i32 + 1)
-            .unwrap()
+        if let Some(root) = root {
+            Self::dfs_traversal(root, 0, 0, &mut index_pairs);
+            index_pairs
+                .iter()
+                .max_by(|pair1, pair2| (pair1.1 - pair1.0).cmp(&(pair2.1 - pair2.0)))
+                .map(|(left, right)| (right - left) as i32 + 1)
+                .unwrap()
+        } else {
+            0
+        }
     }
     fn dfs_traversal(
-        node: Option<Rc<RefCell<TreeNode>>>,
+        node: Rc<RefCell<TreeNode>>,
         node_index: u32,
         depth: u32,
         index_pairs: &mut Vec<(u32, u32)>,
     ) {
-        if let Some(node) = node {
-            match index_pairs.get_mut(depth as usize) {
-                None => {
-                    index_pairs.push((node_index, node_index));
-                }
-                Some((left, right)) => {
-                    if node_index < *left {
-                        *left = node_index
-                    } else if node_index > *right {
-                        *right = node_index
-                    }
+        match index_pairs.get_mut(depth as usize) {
+            None => {
+                index_pairs.push((node_index, node_index));
+            }
+            Some((left, right)) => {
+                if node_index < *left {
+                    *left = node_index
+                } else if node_index > *right {
+                    *right = node_index
                 }
             }
-            if let Some(left) = &node.borrow().left {
-                Self::dfs_traversal(
-                    Some(Rc::clone(left)),
-                    node_index * 2 + 1,
-                    depth + 1,
-                    index_pairs,
-                );
-            }
-            if let Some(right) = &node.borrow().right {
-                Self::dfs_traversal(
-                    Some(Rc::clone(right)),
-                    node_index * 2 + 2,
-                    depth + 1,
-                    index_pairs,
-                );
-            }
+        }
+        if let Some(left) = &node.borrow().left {
+            Self::dfs_traversal(Rc::clone(left), node_index * 2 + 1, depth + 1, index_pairs);
+        }
+        if let Some(right) = &node.borrow().right {
+            Self::dfs_traversal(Rc::clone(right), node_index * 2 + 2, depth + 1, index_pairs);
         }
     }
 }
