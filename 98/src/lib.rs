@@ -15,13 +15,12 @@ impl From<&[Option<i32>]> for TreeNode {
         } else {
             fn build_node(idx: usize, arr: &[Option<i32>]) -> Option<TreeNode> {
                 match arr.get(idx) {
-                    None => None,
+                    None | Some(None) => None,
                     Some(&Some(val)) => Some(TreeNode {
                         val,
                         left: build_node(idx * 2 + 1, arr).map(|node| Rc::new(RefCell::new(node))),
                         right: build_node(idx * 2 + 2, arr).map(|node| Rc::new(RefCell::new(node))),
                     }),
-                    Some(None) => None,
                 }
             }
             build_node(0, arr).unwrap()
