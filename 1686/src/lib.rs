@@ -6,21 +6,21 @@ impl Solution {
             .iter()
             .zip(bob_values.iter())
             .fold(0, |sum, (a, b)| sum + b - a);
-        let mut net_worths = alice_values;
-        net_worths
+        let mut consensus_worths = alice_values;
+        consensus_worths
             .iter_mut()
             .zip(bob_values.iter())
             .for_each(|(n, b)| *n = *n + b);
-        net_worths.sort_unstable();
-        match net_worths
+        consensus_worths.sort_unstable();
+        match consensus_worths
             .iter()
             .rev()
             .enumerate()
-            .fold(0, |alice_margin, (idx, value_for_aliss)| {
+            .fold(0, |alice_margin_in_terms_of_consensus_worth, (idx, consensus)| {
                 if idx % 2 == 0 {
-                    alice_margin + value_for_aliss
+                    alice_margin_in_terms_of_consensus_worth + consensus
                 } else {
-                    alice_margin - value_for_aliss
+                    alice_margin_in_terms_of_consensus_worth - consensus
                 }
             })
             .cmp(&aliss_debt)
