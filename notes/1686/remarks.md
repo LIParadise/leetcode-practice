@@ -13,7 +13,9 @@ Name the two arrays U and V.
 Claim: let sum of individual elements be new array W, also mark every value its originating index.
 Sort W into non-increasing order by the sums, then corresponding indices is exactly the order Alice/Bob should take the gems.
 In some sense their optimal strategies are exactly the same.
+To put it in another way, under such a competitive game settings, thier values, albeit different at first glance, would come to agreement, after all.
 Proof: let sum of U be u, V be v, and each step net worth of Alice and Bob be {a\_i} and {b\_i}.
+First, suppose all elements in U and V are non-negative.
 
 
 
