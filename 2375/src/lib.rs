@@ -27,12 +27,7 @@ impl Solution {
             },
         );
         let initial_d = pattern.chars().take_while(|c| &'D' == c).count() as u8;
-        dbg!(&ret);
-        ret.iter_mut().for_each(|r| {
-            if *r > 1 {
-                *r = *r + initial_d
-            }
-        });
+        ret.iter_mut().skip(1).for_each(|r| *r = *r + initial_d);
         (0..initial_d).for_each(|i| {
             ret.insert(0, i + 2);
         });
