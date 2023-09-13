@@ -80,8 +80,6 @@ impl Solution {
                 });
             }
         });
-        dbg!(&dp_arr);
-        dbg!(get_2d(s.len() - 1, 0));
         dp_arr.get(get_2d(s.len() - 1, 0)).unwrap().to_owned() as i32
     }
 }
