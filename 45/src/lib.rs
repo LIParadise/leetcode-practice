@@ -11,35 +11,52 @@ pub struct Solution;
 
 impl Solution {
     pub fn jump(nums: Vec<i32>) -> i32 {
-        // Relaxation.
-        // Start with whole array, mark all as unreachable
-        // Then for each index relax the estimations.
+        // Idea:
+        // Make an array s.t. its [n] records how far one can go
+        // using [0..=n] of input.
         //
-        // Loop Invariant:
-        // For every step, after loop,
-        // every reachable is at its minimal cost
+        // Algorithm:
+        // With such an array at hand, start from [0], and just
+        // go to what it reads (i.e. the farest one can jump to from
+        // there), till we realize that the end point is in reach, then
+        // count how many times one had jumped.
+        //
         // Proof:
-        // By construction.
-        let mut distances: Vec<Option<usize>> = vec![None; nums.len()];
-        (0..nums.len()).for_each(|idx| {
-            let (known, to_mod) = distances.split_at_mut(idx + 1);
-            let dist = match known.last().unwrap() {
-                None => {
-                    *known.last_mut().unwrap() = Some(0);
-                    0
-                }
-                Some(i) => i.clone(),
-            } + 1;
-            to_mod
-                .iter_mut()
-                .take(nums[idx] as usize)
-                .for_each(|t| match t {
-                    None => *t = Some(dist),
-                    Some(t) if *t > dist => *t = dist,
-                    _ => {}
-                });
+        // By definition, such an array is non-decreasing.
+        // Suppose optimal jump chooses these indices:
+        // [i_0 = 0, i_1, i_2, ..., i_n = len-1]
+        // Suppose our choises of indices are
+        // [j_0 = 0, j_1, j_2, ..., j_m = len-1]
+        // Notice that by our algorithm and construction of the array,
+        // j_k >= i_k for all k.
+        // This is shown by induction and the fact the array being
+        // non-decreasing.
+        // Hence m <= n i.e. our algorithm must be "quicker" to be s.t.
+        // the end is within a grasp, again utilizing the fact said
+        // array being non-decreasing.
+        //
+        // And turns our that constructing such an array is just a linear
+        // scan.
+
+        let mut reachable_indices = nums;
+        (1..reachable_indices.len()).for_each(|idx| {
+            let (known, to_mod) = reachable_indices.split_at_mut(idx);
+            if let Some(to_mod) = to_mod.get_mut(0) {
+                *to_mod = std::cmp::max(known.last().unwrap().clone(), idx as i32 + *to_mod);
+            }
         });
-        distances.last().map_or(0, |dist| dist.unwrap() as i32)
+        dbg!(&reachable_indices);
+        let (mut idx, mut ret) = (0, 0);
+        while let Some(can_jump_to) = reachable_indices.get(idx) {
+            // LC promises that input is s.t. always able to jump to end.
+            // Hence no sanity check.
+            if idx >= reachable_indices.len() - 1 {
+                break;
+            }
+            ret += 1;
+            idx = *can_jump_to as usize;
+        }
+        ret as i32
     }
 }
 
@@ -50,5 +67,6 @@ mod tests {
     fn test_soln() {
         assert_eq!(Solution::jump(vec![2, 3, 1, 1, 4]), 2);
         assert_eq!(Solution::jump(vec![2, 3, 0, 1, 4]), 2);
+        assert_eq!(Solution::jump(vec![0]), 0);
     }
 }
