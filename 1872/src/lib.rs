@@ -55,15 +55,14 @@ impl Solution {
         //
         // For the partial sums, leetcode specifies that input is s.t. must
         // be covered by `i32`.
-        let partial_sums = stones
-            .iter()
-            .scan(0, |sum, stone| {
-                Some({
-                    *sum += stone;
-                    sum.clone()
-                })
-            })
-            .collect::<Vec<_>>();
+        let partial_sums = {
+            let mut stones = stones;
+            (1..stones.len()).for_each(|i| {
+                let (left, right) = stones.split_at_mut(i);
+                right[0] += left.last().unwrap();
+            });
+            stones
+        };
         partial_sums
             .iter()
             .skip(1)
