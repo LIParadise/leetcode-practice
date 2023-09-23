@@ -7,8 +7,6 @@ impl Solution {
         // Idea: remember walls
         //
         // First wall is just where neighboring indices strictly decrease.
-        // It's a simplified container: find next index that's higher, then
-        // we know how much water it holds.
         //
         // Now we have the interesting part: having a wall,
         // where's the counterpart?
@@ -34,41 +32,26 @@ impl Solution {
         let mut ret = 0;
 
         // Naive first case
-        let first_left_wall = height
-            .iter()
-            .enumerate()
-            .zip(height.iter().skip(1))
-            .find(|((_, l), r)| l > r)
-            .map(|((l_idx, _), _)| l_idx);
-        match first_left_wall {
-            None => return 0,
-            Some(w_idx) => {
-                let mut walls = Vec::new();
-                walls.push(w_idx);
-                height
-                    .iter()
-                    .enumerate()
-                    .skip(w_idx + 1)
-                    .for_each(|(i, &h)| {
-                        let mut l_backup = walls.last().map(|tup| tup.clone());
-                        while let Some(&l) = walls.last() {
-                            l_backup = walls.last().map(|tup| tup.clone());
-                            if h >= height[l] {
-                                walls.pop();
-                            } else {
-                                break;
-                            }
-                        }
-                        if walls.is_empty() {
-                            ret += Self::evaluate_walls(&height, l_backup.unwrap(), i);
-                        }
-                        walls.push(i);
-                    });
-                walls.iter().zip(walls.iter().skip(1)).for_each(|(&l, &r)| {
-                    ret += Self::evaluate_walls(&height, l, r);
-                })
+        let mut walls = Vec::new();
+        walls.push(0);
+        height.iter().enumerate().skip(1).for_each(|(i, &h)| {
+            let mut l_backup = walls.last().map(|tup| tup.clone());
+            while let Some(&l) = walls.last() {
+                l_backup = walls.last().map(|tup| tup.clone());
+                if h >= height[l] {
+                    walls.pop();
+                } else {
+                    break;
+                }
             }
-        }
+            if walls.is_empty() {
+                ret += Self::evaluate_walls(&height, l_backup.unwrap(), i);
+            }
+            walls.push(i);
+        });
+        walls.iter().zip(walls.iter().skip(1)).for_each(|(&l, &r)| {
+            ret += Self::evaluate_walls(&height, l, r);
+        });
 
         ret
     }
