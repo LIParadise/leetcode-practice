@@ -6,7 +6,7 @@ impl Solution {
     pub fn trap(height: Vec<i32>) -> i32 {
         // Idea: remember walls
         //
-        // First wall is just where neighboring indices strictly decrease.
+        // A wall is s.t. where neighboring indices strictly decrease.
         //
         // Now we have the interesting part: having a wall,
         // where's the counterpart?
@@ -18,20 +18,20 @@ impl Solution {
         // Instead, we maintain a list of possible walls as follows:
         // First, record our wall.
         // For each number, if it's eligible for a wall, compare it with the
-        // smallest member in our list, and compare them.
-        // While the new comer is no smaller, pop the smallest in the list.
+        // smallest member in our list.
+        // While the new comer is no smaller, pop the smallest in the list,
+        // since the new comer would submerge the smaller one.
         // If there's someone larger, stop, and append the new comer.
         // If new comer is no smaller than our last i.e. largest,
         // then the new comer IS the new wall,
-        // and record this pair for later rain calculation.
+        // we record this pair for later rain calculation.
         //
         // If till end we haven't depleted our list of possible walls,
         // this list records exactly where the walls are, and we're able to
-        // calculate from behind.
+        // calculate the total water.
 
         let mut ret = 0;
 
-        // Naive first case
         let mut walls = Vec::new();
         walls.push(0);
         height.iter().enumerate().skip(1).for_each(|(i, &h)| {
