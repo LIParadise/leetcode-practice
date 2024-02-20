@@ -28,7 +28,7 @@ impl Solution {
                 m
             });
             ret.push(multiplicity.into_iter().fold(1, |acc, m| {
-                Self::mod_p(Self::mod_p(Self::nhr(q[0] as usize, m)) * acc)
+                Self::mod_p(Self::nhr(q[0] as usize, m) as u128 * acc as u128) as usize
             }) as i32);
         });
         ret
@@ -86,8 +86,8 @@ impl Solution {
         }
     }
 
-    fn mod_p(i: usize) -> usize {
-        static P: usize = 1_000_000_007;
+    fn mod_p(i: u128) -> u128 {
+        static P: u128 = 1_000_000_007;
         i % P
     }
 
@@ -97,7 +97,9 @@ impl Solution {
         if r > n {
             0
         } else {
-            (1..=r.min(n - r)).fold(1, |acc, val| acc * (n - val + 1) / val)
+            let r = r as u128;
+            let n = n as u128;
+            Self::mod_p((1..=r.min(n - r)).fold(1, |acc, val| acc * (n - val + 1) / val)) as usize
         }
     }
 
@@ -171,12 +173,10 @@ mod tests {
             ]),
             vec![1, 2, 3, 10, 5]
         );
-        /*
         assert_eq!(
             Solution::ways_to_fill_array(vec![vec![3360, 1536], vec![6850, 6227]]),
             vec![921300655, 46922500]
         );
-        */
     }
 
     #[test]
