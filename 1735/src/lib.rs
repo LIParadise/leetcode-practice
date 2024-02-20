@@ -9,34 +9,27 @@ impl Solution {
          *    remember to pad 1
          * 3. sum these
          */
-        let mut num_of_prime_factors = vec![0, 0, 1, 1];
-        Self::extend_num_of_prime_factors(&mut num_of_prime_factors, 1009);
-        let arr = &mut num_of_prime_factors;
-        let mut ret = Vec::with_capacity(queries.len());
-        match queries.iter().map(|query| query[1] as usize).max() {
-            Some(l) => Self::extend_num_of_prime_factors(arr, l),
-            None => return Vec::new(),
-        }
-        queries.iter().for_each(|query| {
-            let slots = query[0];
-            let prod = query[1];
-            let num_factors = arr[prod as usize];
-            let mut cnt = 0;
-            if prod == 1 {
-                cnt = 1
-            } else {
-                (1..=std::cmp::min(slots, num_factors)).for_each(|merge_some| {
-                    // consider the factors merged to a total of the iterator
-                    // e.g. start by 1, meaning merge all, i.e. the product itself
-                    // The other unfilled entries are padded with 1
-                    // Such merge has (n, m) kinds.
-                    let sub_cnt = Self::mod_p(Self::ncr(num_factors, merge_some))
-                        * Self::mod_p(Self::ncr(slots, merge_some))
-                        * (1..=merge_some).product::<i32>();
-                    cnt = Self::mod_p(cnt + sub_cnt);
-                });
-            }
-            ret.push(cnt);
+        let mut ret: Vec<i32> = Vec::new();
+        let mut primes = Vec::new();
+        queries.iter().for_each(|q| {
+            // Eratosthenes, preparing for prime factorization
+            let mut num = q[1] as usize;
+            Self::extend_primes(&mut primes, num);
+            // Prime factorization
+            let multiplicity: Vec<usize> = primes.iter().fold(Vec::new(), |mut m, p| {
+                let mut cnt = 0;
+                while num % p == 0 {
+                    num /= p;
+                    cnt += 1;
+                }
+                if cnt != 0 {
+                    m.push(cnt);
+                }
+                m
+            });
+            ret.push(multiplicity.into_iter().fold(1, |acc, m| {
+                Self::mod_p(Self::mod_p(Self::nhr(q[0] as usize, m)) * acc)
+            }) as i32);
         });
         ret
     }
@@ -93,14 +86,14 @@ impl Solution {
         }
     }
 
-    fn mod_p(i: i32) -> i32 {
-        static P: i32 = 1_000_000_007;
+    fn mod_p(i: usize) -> usize {
+        static P: usize = 1_000_000_007;
         i % P
     }
 
     /// Simple nCr implementation
     /// Assuming non-negative semantics
-    fn ncr(n: i32, r: i32) -> i32 {
+    fn ncr(n: usize, r: usize) -> usize {
         if r > n {
             0
         } else {
@@ -110,8 +103,8 @@ impl Solution {
 
     /// # of non-negative integer solutions to the following?
     /// x_1 + x_2 + ... + x_n = r
-    /// answer is nhr(n,r)
-    fn nhr(n: i32, r: i32) -> i32 {
+    /// answer is nHr or nhr(n,r)
+    fn nhr(n: usize, r: usize) -> usize {
         Self::ncr(n + r - 1, r)
     }
 
@@ -161,6 +154,7 @@ impl Solution {
 #[cfg(test)]
 mod tests {
     use crate::Solution;
+
     #[test]
     fn test_soln() {
         assert_eq!(
@@ -177,7 +171,12 @@ mod tests {
             ]),
             vec![1, 2, 3, 10, 5]
         );
+        assert_eq!(
+            Solution::ways_to_fill_array(vec![vec![3360, 1536], vec![6850, 6227]]),
+            vec![921300655, 46922500]
+        );
     }
+
     #[test]
     fn test_extend_num_of_prime_factors() {
         let mut arr = vec![0, 0, 1, 1];
@@ -204,11 +203,15 @@ mod tests {
          * Notice here I start with 0 (TBH kinda ill-formed) instead of 1.
          * */
     }
+
     #[test]
     fn test_comb() {
         assert_eq!(Solution::ncr(5, 3), Solution::ncr(5, 2));
         assert_eq!(Solution::ncr(10, 4), 210);
+        assert_eq!(Solution::nhr(3, 2), 6);
+        assert_eq!(Solution::nhr(5, 1), 5);
     }
+
     #[test]
     fn test_eratosthenes() {
         let mut arr = Vec::new();
@@ -224,5 +227,19 @@ mod tests {
         assert_eq!(arr, vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31]);
         Solution::extend_primes(&mut arr, 37);
         assert_eq!(arr, vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]);
+        let mut arr = Vec::new();
+        Solution::extend_primes(&mut arr, 37);
+        assert_eq!(arr, vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]);
+        let mut arr = Vec::new();
+        Solution::extend_primes(&mut arr, 40);
+        assert_eq!(arr, vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]);
+        Solution::extend_primes(&mut arr, 40);
+        assert_eq!(arr, vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]);
+        Solution::extend_primes(&mut arr, 41);
+        assert_eq!(arr, vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41]);
+        Solution::extend_primes(&mut arr, 41);
+        assert_eq!(arr, vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41]);
+        Solution::extend_primes(&mut arr, 42);
+        assert_eq!(arr, vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41]);
     }
 }
