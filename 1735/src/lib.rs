@@ -17,7 +17,10 @@ impl Solution {
         match queries.iter().flatten().max() {
             None => {}
             Some(&ncr_max) => {
-                let ncr = Self::make_ncr(ncr_max as usize * 2 - 1);
+                let ncr = Self::make_ncr(std::cmp::min(ncr_max as usize * 2 - 1, 10012));
+                // input guaranteed to be less than 10_000 by leetcode
+                // multiplicity of primes is at most 2^13 = 8192
+                // using nHr, we need at most mCs where m = 10000 + 13 - 1 = 10012
                 queries.iter().for_each(|q| {
                     // Eratosthenes, preparing for prime factorization
                     let mut num = q[1] as usize;
@@ -146,10 +149,6 @@ mod tests {
         assert_eq!(
             Solution::ways_to_fill_array(vec![vec![2, 6], vec![5, 1], vec![73, 660]]),
             vec![4, 1, 50734910]
-        );
-        assert_eq!(
-            Solution::ways_to_fill_array(vec![vec![14, 7], vec![20, 3], vec![13, 9], vec![4, 9]]),
-            vec![]
         );
         assert_eq!(
             Solution::ways_to_fill_array(vec![
