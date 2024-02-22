@@ -28,12 +28,14 @@ impl Solution {
                     let multiplicity = primes
                         .iter()
                         .scan(q[1] as usize, |factored_num, p| {
-                            let mut cnt = 0;
-                            while *factored_num % p == 0 {
-                                *factored_num /= p;
-                                cnt += 1;
-                            }
-                            Some((cnt != 0).then_some(cnt))
+                            (*factored_num != 1).then(|| {
+                                let mut cnt = 0;
+                                while *factored_num % p == 0 {
+                                    *factored_num /= p;
+                                    cnt += 1;
+                                }
+                                (cnt != 0).then_some(cnt)
+                            })
                         })
                         .flatten()
                         .collect::<Vec<usize>>();
