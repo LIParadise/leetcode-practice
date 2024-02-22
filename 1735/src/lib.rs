@@ -23,20 +23,20 @@ impl Solution {
                 // using nHr, we need at most mCs where m = 10000 + 13 - 1 = 10012
                 queries.iter().for_each(|q| {
                     // Eratosthenes, preparing for prime factorization
-                    let mut num = q[1] as usize;
-                    Self::extend_primes(&mut primes, num);
+                    Self::extend_primes(&mut primes, q[1] as usize);
                     // Prime factorization
-                    let multiplicity: Vec<usize> = primes.iter().fold(Vec::new(), |mut m, p| {
-                        let mut cnt = 0;
-                        while num % p == 0 {
-                            num /= p;
-                            cnt += 1;
-                        }
-                        if cnt != 0 {
-                            m.push(cnt);
-                        }
-                        m
-                    });
+                    let multiplicity = primes
+                        .iter()
+                        .scan(q[1] as usize, |factored_num, p| {
+                            let mut cnt = 0;
+                            while *factored_num % p == 0 {
+                                *factored_num /= p;
+                                cnt += 1;
+                            }
+                            Some((cnt != 0).then_some(cnt))
+                        })
+                        .flatten()
+                        .collect::<Vec<usize>>();
                     ret.push(multiplicity.into_iter().fold(1, |acc, m| {
                         Self::mod_p(
                             acc as u64
