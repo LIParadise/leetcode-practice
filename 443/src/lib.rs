@@ -28,8 +28,8 @@ impl Solution {
             }
             right = left.saturating_sub(1);
         }
-        while let Some(idx) = chars.iter().rev().position(|&c| c == 0 as char) {
-            let idx = chars.len() - 1 - idx;
+        while let Some(rev_idx) = chars.iter().rev().position(|&c| c == 0 as char) {
+            let idx = chars.len() - 1 - rev_idx;
             chars.remove(idx);
         }
         chars.len() as i32
