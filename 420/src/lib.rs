@@ -14,7 +14,7 @@ impl Kind {
             'A'..='Z' => Self::Upper,
             '0'..='9' => Self::Digit,
             '.' | '!' => Self::Punct,
-            _ => panic!(),
+            _ => panic!("Char not in Leetcode specification"),
         }
     }
 }
@@ -92,7 +92,8 @@ impl Solution {
                 // 2.a For contiguous 3 or 4, an insert creates required hiatus,
                 //     and we need insert anyway. Non-issue.
                 // 2.b For contiguous 5, it's either "00000" or ".....",
-                //     and they happen to be handled correctly in the resp. branches
+                //     i.e. the upper/lower/digit criteria or not,
+                //     and they happen to be handled correctly in these resp. branches
                 let valid_kind_cnt = pwd_kinds.intersection(&required_kinds).count();
                 match valid_kind_cnt {
                     2.. => {
@@ -109,10 +110,44 @@ impl Solution {
                         steps = 3;
                     }
                     #[allow(unreachable_patterns)]
-                    _ => panic!("This line is unnecessary but Leetcode Rust compiler is so ancient it's required."),
+                    _ => panic!("This branch is unnecessary but Leetcode Rust compiler is so ancient it's required."),
                 }
             }
             6..=50 => {
+                // First, suppose length is OK (6..=20)
+                // By lemma, we consider only replace, and as long as the contiguous 3
+                // criteria is met we're happy.
+                // Hence, we erase all the contiguous 3 intervals by replacing chars in them, till
+                // there's no contiguous 3 interval.
+                //
+                // After which, we got two cases:
+                // Case 1. Required upper/lower/digit kinds are met. We're done.
+                // Case 2. Required upper/lower/digit kinds not met.
+                // By pigeon hole principle, there must be enough _irrelevant_ characters s.t. we
+                // could do arbitrary replace s.t. kinds are met.
+                // Which is we're gonna do, and the cost is trivial.
+                //
+                //
+                //
+                // Second, suppose length is (21..=50)
+                //
+                // Observation 1: deletion is necessary
+                //
+                // Observation 2: if there's contiguous interval of which len is no less than 3,
+                // they are of priority to delete from, since this would imply less replace
+                // required in the first step.
+                //
+                // Observation 3: In particular, if the interval is of length mod 3 equal 0, they
+                // are first priorities: 1 deletion here saves 1 replace later.
+                // Furthermore, if it's mod 1, they are second priorities,
+                // since 2 deletions save 1 replace.
+                //
+                // Finally, mod 2 is the least effective in terms of cost.
+                // Case 1. we're (6..=20) when there's some contiguous 3 intervals left.
+                // Don't care. First part takes good care of them.
+                // Case 2. we're still (21..=50) but all contiguous intervals are cleared.
+                // Again by pigeon hole, there must be enough _irrelevant_ chars s.t. the required
+                // deletion is trivial task.
                 steps = 0;
                 let mut intervals_of_repeat = Self::repeat_3_or_more(pwd.as_ref());
                 while pwd.len() > 20 {
@@ -160,7 +195,7 @@ impl Solution {
             51.. => panic!("Leetcode specifies no longer than 50, abort."),
             #[allow(unreachable_patterns)]
             _ => panic!(
-                "This line is unnecessary but Leetcode Rust compiler is so ancient it's required."
+                "This branch is unnecessary but Leetcode Rust compiler is so ancient it's required."
             ),
         }
         steps as i32
