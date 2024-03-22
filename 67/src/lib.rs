@@ -7,41 +7,80 @@ impl Solution {
         } else {
             (b.as_bytes(), a.as_bytes())
         };
-        let mut ret = Vec::new();
+        let mut actual_sum = Vec::new();
         let mut carry = 0;
-        a.iter()
-            .rev()
-            .zip(b.iter().rev().chain(std::iter::repeat(&('0' as u8))))
-            .for_each(|(&a, &b)| {
-                let a = a - '0' as u8;
-                let b = b - '0' as u8;
-                match carry + a + b {
-                    3 => {
+        let u32_in_u8_slice = &mut [0; 4];
+        static PADDING: &'static [u8] = &[0, 0, 0, 0];
+        a.rchunks(4)
+            .zip(b.rchunks(4).chain(std::iter::repeat(PADDING)))
+            .for_each(|(a, b)| {
+                u32_in_u8_slice.fill(0);
+                u32_in_u8_slice[4 - a.len()..].clone_from_slice(a);
+                let a = u32::from_be_bytes(*u32_in_u8_slice);
+                u32_in_u8_slice.fill(0);
+                u32_in_u8_slice[4 - b.len()..].clone_from_slice(b);
+                let b = u32::from_be_bytes(*u32_in_u8_slice);
+                match a.overflowing_add(b) {
+                    (wrapped_sum, true) => {
+                        // it's impossible for a wrapped result plus 1 to overflow again
+                        // e.g. 1111 + 1111 = 1_1110
+                        // and 1110 + 0001 = 1111
+                        actual_sum.push(wrapped_sum + carry);
                         carry = 1;
-                        ret.push(true)
                     }
-                    2 => {
-                        carry = 1;
-                        ret.push(false)
-                    }
-                    1 => {
-                        carry = 0;
-                        ret.push(true)
-                    }
-                    0 => {
-                        carry = 0;
-                        ret.push(false)
-                    }
-                    _ => panic!("Addition fails: bit overflow"),
+                    (sum, false) => match sum.overflowing_add(carry) {
+                        (_, true) => {
+                            actual_sum.push(0);
+                            carry = 1;
+                        }
+                        (sum, false) => {
+                            actual_sum.push(sum);
+                            carry = 0;
+                        }
+                    },
                 }
             });
         if carry == 1 {
-            ret.push(true);
+            actual_sum.push(1);
         }
-        ret.into_iter()
-            .rev()
-            .map(|b| b.then(|| '1').unwrap_or('0'))
-            .collect()
+        static U32_MSB: u32 = 0x8000_0000;
+        if actual_sum.len() >= 1 {
+            let mut ret = actual_sum
+                .pop()
+                .map(|mut u| {
+                    let mut bits_remained = 32;
+                    while u & U32_MSB == 0 {
+                        u <<= 1;
+                        bits_remained -= 1;
+                    }
+                    (0..bits_remained)
+                        .map(|_| {
+                            let b = if u & U32_MSB == U32_MSB {
+                                '1' as u8
+                            } else {
+                                '0' as u8
+                            };
+                            u <<= 1;
+                            b
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .unwrap();
+            ret.extend(actual_sum.into_iter().rev().flat_map(|mut u| {
+                (0..32).map(move |_| {
+                    let b = if u & U32_MSB == U32_MSB {
+                        '1' as u8
+                    } else {
+                        '0' as u8
+                    };
+                    u <<= 1;
+                    b
+                })
+            }));
+            String::from_utf8(ret).unwrap()
+        } else {
+            String::new()
+        }
     }
 }
 
