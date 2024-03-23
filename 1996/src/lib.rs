@@ -10,27 +10,21 @@ impl Solution {
     pub fn number_of_weak_characters(mut properties: Vec<Vec<i32>>) -> i32 {
         let mut counter = 0;
         while !properties.is_empty() {
-            let pivot = properties.first().cloned().unwrap();
-            while let Some(smaller) = properties
+            let maximal = properties
                 .iter()
-                .position(|smaller| Self::lt(smaller, &pivot))
-            {
-                properties.swap_remove(smaller);
-                counter += 1;
-            }
-            let pivot_is_maximal = if let Some(_) = properties
+                .reduce(|maximal, n| if Self::lt(maximal, n) { n } else { maximal })
+                .cloned()
+                .unwrap();
+            let mut last_idx = 0;
+            while let Some(idx) = properties[last_idx..]
                 .iter()
-                .position(|greater| Self::lt(&pivot, greater))
+                .position(|n| Self::lt(n, &maximal) || n == &maximal)
             {
-                false
-            } else {
-                true
-            };
-            while let Some(equal) = properties.iter().position(|p| p == &pivot) {
-                properties.swap_remove(equal);
-                if !pivot_is_maximal {
+                last_idx = idx + last_idx;
+                if Self::lt(&properties[last_idx], &maximal) {
                     counter += 1;
                 }
+                properties.swap_remove(last_idx);
             }
         }
         counter
