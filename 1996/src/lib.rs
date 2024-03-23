@@ -9,22 +9,16 @@ impl Solution {
     // O(n^2) brute force not possible since input length spec goes up to 10^5
     pub fn number_of_weak_characters(mut properties: Vec<Vec<i32>>) -> i32 {
         let mut counter = 0;
-        while !properties.is_empty() {
-            let maximal = properties
-                .iter()
-                .reduce(|maximal, n| if Self::lt(maximal, n) { n } else { maximal })
-                .cloned()
-                .unwrap();
-            let mut last_idx = 0;
-            while let Some(idx) = properties[last_idx..]
-                .iter()
-                .position(|n| Self::lt(n, &maximal) || n == &maximal)
-            {
-                last_idx = idx + last_idx;
-                if Self::lt(&properties[last_idx], &maximal) {
-                    counter += 1;
-                }
-                properties.swap_remove(last_idx);
+        while let Some(last) = properties.last().cloned() {
+            if let Some(i) = properties.iter().position(|n| Self::lt(&last, n)) {
+                properties.swap(i, i / 2);
+                counter += 1;
+                properties.pop();
+            } else if let Some(i) = properties.iter().position(|n| Self::lt(n, &last)) {
+                properties.swap_remove(i);
+                counter += 1;
+            } else {
+                properties.pop();
             }
         }
         counter
