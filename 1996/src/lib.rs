@@ -8,75 +8,35 @@ impl Solution {
     /// return # of elements that are not maximal
     // O(n^2) brute force not possible since input length spec goes up to 10^5
     pub fn number_of_weak_characters(mut properties: Vec<Vec<i32>>) -> i32 {
-        // Hoare's partition (ref: quicksort variants)
-        //
-        // Lemma:
-        // One and only one occurs between a and b:
-        // 1. a > b
-        // 2. a < b
-        // 3. a and b are not comparable
-        // Proof:
-        // supp. a and b are element-wise equal, they are not comparable under this certain
-        // partial ordering.
-        //
-        // Idea:
-        // Partition input s.t. those smaller than pivot are at the end; discard them.
-
         let mut counter = 0;
-        loop {
-            if let Some(pivot) = properties.first().cloned() {
-                let mut l_idx = 0;
-                let mut r_idx = properties.len() - 1;
-                let mut pivot_is_maximal = true;
-                loop {
-                    while let Some(l) = properties.get(l_idx) {
-                        if Self::lt(&pivot, l) || !Self::comparable(&pivot, l) {
-                            // notice pivot is chosen to be the first guy,
-                            // and it just stays there
-                            // which serves also as boundary for `r_idx`
-                            if Self::lt(&pivot, l) {
-                                pivot_is_maximal = false;
-                            }
-                            l_idx += 1;
-                        } else {
-                            break;
-                        }
-                    }
-                    while Self::lt(&properties[r_idx], &pivot) {
-                        r_idx -= 1;
-                    }
-                    if Self::lt(&pivot, &properties[r_idx]) {
-                        pivot_is_maximal = false;
-                    }
-                    if l_idx == r_idx {
-                        panic!("Unexpected Hoare partitioning with custom partial order");
-                    } else if l_idx > r_idx {
-                        break;
-                    } else {
-                        properties.swap(l_idx, r_idx);
-                        l_idx += 1;
-                        r_idx -= 1;
-                    }
-                }
-                counter += properties.len() - l_idx;
-                properties.resize(l_idx, Vec::new());
-                while let Some(pivot) = properties.iter().position(|v| *v == pivot) {
-                    properties.swap_remove(pivot);
-                    if !pivot_is_maximal {
-                        counter += 1;
-                    }
-                }
+        while !properties.is_empty() {
+            let pivot = properties.first().cloned().unwrap();
+            while let Some(smaller) = properties
+                .iter()
+                .position(|smaller| Self::lt(smaller, &pivot))
+            {
+                properties.swap_remove(smaller);
+                counter += 1;
+            }
+            let pivot_is_maximal = if let Some(_) = properties
+                .iter()
+                .position(|greater| Self::lt(&pivot, greater))
+            {
+                false
             } else {
-                break;
+                true
+            };
+            while let Some(equal) = properties.iter().position(|p| p == &pivot) {
+                properties.swap_remove(equal);
+                if !pivot_is_maximal {
+                    counter += 1;
+                }
             }
         }
-        counter.try_into().unwrap()
+        counter
     }
     fn lt(a: &[i32], b: &[i32]) -> bool {
         a.iter().zip(b.iter()).all(|(a, b)| a < b)
-    }
-    fn comparable(a: &[i32], b: &[i32]) -> bool {
-        Self::lt(a, b) || Self::lt(b, a)
     }
 }
 
