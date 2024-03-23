@@ -15,6 +15,18 @@ impl Solution {
                 .reduce(|maximal, n| if Self::lt(maximal, n) { n } else { maximal })
                 .cloned()
                 .unwrap();
+            loop {
+                let new_maximal = properties.iter().fold(&maximal, |maximal, n| {
+                    if Self::lt(&maximal, n) {
+                        n
+                    } else {
+                        &maximal
+                    }
+                });
+                if *new_maximal == maximal {
+                    break;
+                }
+            }
             let mut last_idx = 0;
             while let Some(idx) = properties[last_idx..]
                 .iter()
