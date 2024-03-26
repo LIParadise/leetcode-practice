@@ -12,28 +12,35 @@ impl Solution {
                 .count()
         }));
         let mut left_right = vec![(0, 0); s.len()];
-        {
-            // Manual indexing instead of iterator
-            // More towards C rather than Rust
-            let mut idx = 0;
-            while idx < symmetric_len.len() {
-                let l = symmetric_len[idx];
-                left_right[idx..=idx + l]
-                    .iter_mut()
-                    .enumerate()
-                    .for_each(|(l, i)| {
-                        i.0 = std::cmp::max(i.0, l * 2 + 1);
-                    });
-                left_right[idx - l..=idx]
-                    .iter_mut()
-                    .rev()
-                    .enumerate()
-                    .for_each(|(l, i)| {
-                        i.1 = std::cmp::max(i.1, l * 2 + 1);
-                    });
-                idx += l + 1;
-            }
-        }
+        symmetric_len.iter().enumerate().for_each(|(idx, &l)| {
+            left_right[idx..=idx + l]
+                .iter_mut()
+                .enumerate()
+                .rev()
+                .try_for_each(|(l, i)| {
+                    if l * 2 + 1 > i.0 {
+                        i.0 = l * 2 + 1;
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
+                })
+                .ok();
+            left_right[idx - l..=idx]
+                .iter_mut()
+                .rev()
+                .enumerate()
+                .rev()
+                .try_for_each(|(l, i)| {
+                    if l * 2 + 1 > i.1 {
+                        i.1 = l * 2 + 1;
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
+                })
+                .ok();
+        });
         #[cfg(test)]
         {
             println!("{:?}", s);
