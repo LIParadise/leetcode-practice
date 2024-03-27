@@ -12,40 +12,74 @@ impl Solution {
                 .count()
         }));
         let mut left_right = vec![(0, 0); s.len()];
-        symmetric_len.iter().enumerate().for_each(|(idx, &l)| {
-            left_right[idx..=idx + l]
-                .iter_mut()
-                .enumerate()
-                .rev()
-                .try_for_each(|(l, i)| {
-                    if l * 2 + 1 > i.0 {
-                        i.0 = l * 2 + 1;
-                        Ok(())
-                    } else {
-                        Err(())
+        symmetric_len
+            .iter()
+            .scan(None, |thres, &x| {
+                Some(match thres {
+                    None => true,
+                    Some(y) if x > *y => {
+                        *thres = Some(x);
+                        true
                     }
+                    _ => false,
                 })
-                .ok();
-            left_right[idx - l..=idx]
-                .iter_mut()
-                .rev()
-                .enumerate()
-                .rev()
-                .try_for_each(|(l, i)| {
-                    if l * 2 + 1 > i.1 {
-                        i.1 = l * 2 + 1;
-                        Ok(())
-                    } else {
-                        Err(())
+            })
+            .zip(symmetric_len.iter().enumerate())
+            .for_each(|(updated, (i, &x))| {
+                if updated {
+                    left_right[i..=i + x]
+                        .iter_mut()
+                        .enumerate()
+                        .rev()
+                        .try_for_each(|(l, y)| {
+                            if 2 * l + 1 > y.0 {
+                                y.0 = 2 * l + 1;
+                                Ok(())
+                            } else {
+                                Err(())
+                            }
+                        })
+                        .ok();
+                }
+            });
+        symmetric_len
+            .iter()
+            .rev()
+            .scan(None, |thres, &x| {
+                Some(match thres {
+                    None => true,
+                    Some(y) if x > *y => {
+                        *thres = Some(x);
+                        true
                     }
+                    _ => false,
                 })
-                .ok();
-        });
+            })
+            .zip(symmetric_len.iter().enumerate().rev())
+            .for_each(|(updated, (i, &x))| {
+                if updated {
+                    left_right[i - x..=i]
+                        .iter_mut()
+                        .rev()
+                        .enumerate()
+                        .rev()
+                        .try_for_each(|(l, y)| {
+                            if 2 * l + 1 > y.1 {
+                                y.1 = 2 * l + 1;
+                                Ok(())
+                            } else {
+                                Err(())
+                            }
+                        })
+                        .ok();
+                }
+            });
         #[cfg(test)]
         {
             println!("{:?}", s);
-            println!("{:?}", symmetric_len);
-            println!("{:?}", left_right);
+            println!("s{:?}", symmetric_len);
+            println!("l{:?}", left_right.iter().map(|p| p.0).collect::<Vec<_>>());
+            println!("r{:?}", left_right.iter().map(|p| p.1).collect::<Vec<_>>());
         }
         (0..left_right.len()).for_each(|i| {
             let (a, b) = left_right.split_at_mut(i);
@@ -61,7 +95,8 @@ impl Solution {
         });
         #[cfg(test)]
         {
-            println!("{:?}", left_right);
+            println!("l{:?}", left_right.iter().map(|p| p.0).collect::<Vec<_>>());
+            println!("r{:?}", left_right.iter().map(|p| p.1).collect::<Vec<_>>());
         }
         left_right
             .iter()
@@ -84,6 +119,10 @@ mod tests {
         assert_eq!(
             Solution::max_product("ggbswiymmlevedhkbdhntnhdbkhdevelmmyiwsbgg".to_owned()),
             45
+        );
+        assert_eq!(
+            Solution::max_product("wtbptdhbjqsrwkxccxkwrsqjbhdtpbtw".to_owned()),
+            1
         );
     }
 }
