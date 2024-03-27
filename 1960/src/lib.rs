@@ -3,14 +3,42 @@ pub struct Solution;
 impl Solution {
     pub fn max_product(s: String) -> i64 {
         let s = s.as_bytes();
-        let symmetric_len = Vec::from_iter((0..s.len()).map(|i| {
-            let (l, r) = s.split_at(i);
-            l.iter()
-                .rev()
-                .zip(r.iter().skip(1))
-                .take_while(|(a, b)| a == b)
-                .count()
-        }));
+        let mut symmetric_len = vec![0; s.len()];
+        symmetric_len
+            .iter_mut()
+            .enumerate()
+            .step_by(2)
+            .for_each(|(i, len)| {
+                let (l, r) = s.split_at(i);
+                *len = l
+                    .iter()
+                    .rev()
+                    .zip(r.iter().skip(1))
+                    .take_while(|(a, b)| a == b)
+                    .count()
+            });
+        (0..symmetric_len.len()).skip(1).step_by(2).for_each(|i| {
+            match (symmetric_len.get(i - 1), symmetric_len.get(i + 1)) {
+                (None, _) => panic!("Weird array len"),
+                (Some(_), None) => symmetric_len[i] = 0,
+                (Some(&l), Some(&r)) => {
+                    if s[i - 1] != s[i + 1] {
+                        symmetric_len[i] = 0;
+                    } else {
+                        let at_least = std::cmp::min(l, r) + 1;
+                        let (l, r) = s.split_at(i);
+                        symmetric_len[i] = l
+                            .iter()
+                            .rev()
+                            .zip(r.iter().skip(1))
+                            .skip(at_least)
+                            .take_while(|(a, b)| a == b)
+                            .count()
+                            + at_least;
+                    }
+                }
+            }
+        });
         let mut left_right = vec![(0, 0); s.len()];
         symmetric_len
             .iter()
