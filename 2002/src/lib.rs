@@ -22,7 +22,7 @@ impl Solution {
                         1
                     } else {
                         // if radius ain't 0, the copy part of Manacher's algorithm already took care of
-                        // the extra hidden special symbols, so no need to add them
+                        // the extra hidden special symbol, so no need to add them
                         0
                     }
             } else {
