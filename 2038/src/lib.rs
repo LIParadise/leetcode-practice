@@ -25,7 +25,7 @@ impl Solution {
             ('B', State::FirstB) => s = State::SecondB,
             _ => panic!("String not comprised only of 'A' and 'B', abort."),
         });
-        return a_cnt > b_cnt;
+        a_cnt > b_cnt
     }
 }
 
