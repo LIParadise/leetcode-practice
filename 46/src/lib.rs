@@ -9,6 +9,8 @@ impl Solution {
     /// -10 <= nums[i] <= 10
     pub fn permute(nums: Vec<i32>) -> Vec<Vec<i32>> {
         /*
+         * Consider doing permutations for "abcde"
+         *
          * 1 => a
          * 2 => ab, ba
          * 3 => consider where to put 'c';
@@ -17,24 +19,29 @@ impl Solution {
          *      They are all different, and they together are all.
          * 4 => consider where to put 'd', 4*6 = 24
          * So on and so forth.
+         *
+         * I.e. build the permutations by parts, consider characters one by one
+         * For every new character, consider all available indices it could be, insert it to that
+         * index
+         * Do such to all the previously built permutation of substrings.
          */
         let mut ret: Vec<Vec<i32>> = Vec::new();
-        let mut mem = Vec::new();
+        let mut workspace = Vec::new();
         for n in nums {
             if ret.is_empty() {
-                mem.push(vec![n]);
+                workspace.push(vec![n]);
             } else {
-                mem.clear();
-                for old in &ret {
-                    for idx in 0..=old.len() {
-                        let mut old_copy = old.clone();
-                        old_copy.insert(idx, n.clone());
-                        mem.push(old_copy);
+                workspace.clear();
+                for permutation_of_substring in &ret {
+                    for idx in 0..=permutation_of_substring.len() {
+                        let mut copied = permutation_of_substring.clone();
+                        copied.insert(idx, n);
+                        workspace.push(copied);
                     }
                 }
             }
             ret.clear();
-            mem.iter().for_each(|arr| ret.push(arr.clone()));
+            ret.extend(workspace.iter().cloned());
         }
         ret
     }
