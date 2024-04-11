@@ -5,21 +5,35 @@ impl Solution {
     pub fn count_max_or_subsets(nums: Vec<i32>) -> i32 {
         let target = nums.iter().fold(0, |target, n| target | n);
         let mut ret = 0;
-        (0..2_u32.pow(nums.len() as u32)).for_each(|mut bitmask| {
-            if target
-                == nums
-                    .iter()
-                    .filter(|_| {
-                        let in_subset = bitmask & 1 == 1;
-                        bitmask >>= 1;
-                        in_subset
-                    })
-                    .fold(0, |result, n| result | n)
-            {
-                ret += 1;
+        Self::powerset_bitwise_or_count_worker(&target, &vec![], 0, &nums, &mut ret);
+        ret.try_into().unwrap()
+    }
+    fn powerset_bitwise_or_count_worker(
+        target: &i32,
+        part: &[i32],
+        index: usize,
+        set: &[i32],
+        powerset_size: &mut usize,
+    ) {
+        match set.get(index) {
+            Some(&i) => {
+                Self::powerset_bitwise_or_count_worker(target, part, index + 1, set, powerset_size);
+                let mut part = part.to_owned();
+                part.push(i);
+                Self::powerset_bitwise_or_count_worker(
+                    target,
+                    &part,
+                    index + 1,
+                    set,
+                    powerset_size,
+                );
             }
-        });
-        ret
+            None => {
+                if part.iter().fold(0, |or_result, i| i | or_result) == *target {
+                    *powerset_size += 1;
+                }
+            }
+        }
     }
 }
 
