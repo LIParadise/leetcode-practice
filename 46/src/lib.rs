@@ -8,41 +8,37 @@ impl Solution {
     /// 1 <= nums.length <= 6
     /// -10 <= nums[i] <= 10
     pub fn permute(nums: Vec<i32>) -> Vec<Vec<i32>> {
-        /*
-         * 1 => a
-         * 2 => ab, ba
-         * 3 => consider where to put 'c';
-         *      3 locations for "ab"
-         *      3 locations for "ba"
-         *      They are all different, and they together are all.
-         * 4 => consider where to put 'd', 4*6 = 24
-         * So on and so forth.
-         */
-        let mut ret: Vec<Vec<i32>> = Vec::new();
-        let mut mem = Vec::new();
-        for n in nums {
-            if ret.is_empty() {
-                mem.push(vec![n]);
-            } else {
-                mem.clear();
-                for old in &ret {
-                    for idx in 0..=old.len() {
-                        let mut old_copy = old.clone();
-                        old_copy.insert(idx, n.clone());
-                        mem.push(old_copy);
-                    }
+        let factorial = (1..=nums.len()).product::<usize>();
+        let mut ret = vec![Vec::with_capacity(nums.len()); factorial];
+        let mut smaller_factorial = factorial;
+        // Idea:
+        // consider [1, 2, 3]
+        // 1        2   1            3 2   1
+        // 1        2   1              2 3 1
+        // 1   ->   2   1       ->     2   1 3
+        // 1            1   2            3 1   2
+        // 1            1   2              1 3 2
+        // 1            1   2              1   2 3
+        (0..nums.len()).for_each(|idx| {
+            let mut insert_at = 0;
+            smaller_factorial /= idx + 1;
+            (0..factorial / smaller_factorial).for_each(|i| {
+                (0..smaller_factorial).for_each(|j| {
+                    ret[smaller_factorial * i + j].insert(insert_at, nums[idx]);
+                });
+                insert_at += 1;
+                if insert_at > idx {
+                    insert_at = 0;
                 }
-            }
-            ret.clear();
-            mem.iter().for_each(|arr| ret.push(arr.clone()));
-        }
+            });
+        });
         ret
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
+    use std::collections::BTreeSet;
     use std::fmt::Debug;
     use std::hash::Hash;
 
@@ -62,12 +58,40 @@ mod tests {
         let output = Solution::permute(vec![4, 2]);
         let ans = vec![vec![4, 2], vec![2, 4]];
         test_soln_worker(ans, output);
+        let output = Solution::permute(vec![5, 7, 6, 0]);
+        let ans = vec![
+            vec![5, 7, 6, 0],
+            vec![5, 7, 0, 6],
+            vec![5, 6, 7, 0],
+            vec![5, 6, 0, 7],
+            vec![5, 0, 6, 7],
+            vec![5, 0, 7, 6],
+            vec![7, 6, 0, 5],
+            vec![7, 0, 6, 5],
+            vec![6, 7, 0, 5],
+            vec![6, 0, 7, 5],
+            vec![0, 6, 7, 5],
+            vec![0, 7, 6, 5],
+            vec![7, 5, 6, 0],
+            vec![7, 5, 0, 6],
+            vec![6, 5, 7, 0],
+            vec![6, 5, 0, 7],
+            vec![0, 5, 6, 7],
+            vec![0, 5, 7, 6],
+            vec![6, 0, 5, 7],
+            vec![0, 6, 5, 7],
+            vec![7, 0, 5, 6],
+            vec![0, 7, 5, 6],
+            vec![6, 7, 5, 0],
+            vec![7, 6, 5, 0],
+        ];
+        test_soln_worker(ans, output);
     }
 
-    fn test_soln_worker<T: Eq + Hash + Debug>(a: Vec<T>, b: Vec<T>) {
+    fn test_soln_worker<T: Eq + Hash + Debug + Ord>(a: Vec<T>, b: Vec<T>) {
         assert!(a.len() == b.len());
-        let a_set = a.into_iter().collect::<HashSet<T>>();
-        let b_set = b.into_iter().collect::<HashSet<T>>();
-        assert!(a_set.iter().all(|a| b_set.contains(a) == true));
+        let a_set = a.into_iter().collect::<BTreeSet<T>>();
+        let b_set = b.into_iter().collect::<BTreeSet<T>>();
+        assert_eq!(a_set.symmetric_difference(&b_set).count(), 0);
     }
 }
