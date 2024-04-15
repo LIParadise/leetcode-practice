@@ -20,28 +20,37 @@ impl BinaryMatrix {
         Self { matrix }
     }
     pub fn get(&self, row: usize, col: usize) -> i32 {
-        self.matrix[row][col]
+        *self.matrix.get(row).unwrap().get(col).unwrap()
     }
     pub fn dimensions(&self) -> Vec<usize> {
-        vec![self.matrix[0].len(), self.matrix.len()]
+        vec![self.matrix.len(), self.matrix[0].len()]
     }
 }
 
 impl Solution {
     pub fn left_most_column_with_one(binaryMatrix: &BinaryMatrix) -> i32 {
-        if let [rows, cols] = binaryMatrix.dimensions().as_slice() {
-            let (mut binary_search_start, mut binary_search_end) = (0, *cols);
-            while binary_search_start < binary_search_end {
-                let c = (binary_search_start + binary_search_end) / 2;
-                match (0..*rows).all(|r| binaryMatrix.get(r, c) == 0) {
-                    true => binary_search_start = c + 1,
-                    false => binary_search_end = c,
+        if let &[rows, cols] = binaryMatrix.dimensions().as_slice() {
+            let mut coordinate = (0, cols - 1);
+            while coordinate.0 < rows && coordinate.1 < cols {
+                match binaryMatrix.get(coordinate.0, coordinate.1) {
+                    0 => coordinate.0 += 1,
+                    1 => {
+                        // Weird TODO below
+                        if coordinate.1 == 0 {
+                            // This if clause should not be required,
+                            // but LC insists I add this line...
+                            return 0;
+                        }
+                        // Weird TODO above
+                        coordinate.1 = coordinate.1.wrapping_sub(1);
+                    }
+                    n => panic!("Invalid matrix element {n}"),
                 }
             }
-            if binary_search_end == *cols {
+            if coordinate.1 == cols - 1 {
                 -1
             } else {
-                binary_search_end as i32
+                coordinate.1.wrapping_add(1) as i32
             }
         } else {
             panic!("Dimension not working as expected")
@@ -54,6 +63,57 @@ mod tests {
     use crate::Solution;
     #[test]
     fn test_soln() {
-        todo!()
+        assert_eq!(
+            0,
+            Solution::left_most_column_with_one(&crate::BinaryMatrix::new(vec![
+                vec![0, 0],
+                vec![1, 1]
+            ]))
+        );
+        assert_eq!(
+            0,
+            Solution::left_most_column_with_one(&crate::BinaryMatrix::new(vec![
+                vec![1, 1],
+                vec![0, 0]
+            ]))
+        );
+        assert_eq!(
+            1,
+            Solution::left_most_column_with_one(&crate::BinaryMatrix::new(vec![
+                vec![0, 0],
+                vec![0, 1]
+            ]))
+        );
+        assert_eq!(
+            -1,
+            Solution::left_most_column_with_one(&crate::BinaryMatrix::new(vec![
+                vec![0, 0],
+                vec![0, 0]
+            ]))
+        );
+        assert_eq!(
+            1,
+            Solution::left_most_column_with_one(&crate::BinaryMatrix::new(vec![
+                vec![0, 0, 0],
+                vec![0, 1, 1],
+                vec![0, 0, 1]
+            ]))
+        );
+        assert_eq!(
+            2,
+            Solution::left_most_column_with_one(&crate::BinaryMatrix::new(vec![
+                vec![0, 0, 0],
+                vec![0, 0, 1],
+                vec![0, 0, 1]
+            ]))
+        );
+        assert_eq!(
+            0,
+            Solution::left_most_column_with_one(&crate::BinaryMatrix::new(vec![
+                vec![1, 1, 1],
+                vec![0, 0, 1],
+                vec![0, 0, 1]
+            ]))
+        );
     }
 }
