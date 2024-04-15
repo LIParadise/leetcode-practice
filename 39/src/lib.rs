@@ -28,48 +28,51 @@ impl Solution {
         if target <= 0 {
             return Vec::new();
         }
-        let mut dp: Vec<Vec<Vec<i32>>> = Vec::with_capacity(target as usize);
         // 1D DP table
-        // At the beginning of each iteration, the table stores answer to
-        // subproblem with different target sum, using only part of
-        // the given candidates.
-        // Specifically, `dp[0]` stores how to get sum 1,
-        // `dp[1]` stores how to get sum 2, so on and so forth.
-        for _ in 0..target {
-            dp.push(Vec::new())
-        }
-        for idx in 0..candidates.len() {
+        // At the beginning of each iteration,
+        // the table stores answer to subproblem with different target sum,
+        // using only part of the given candidates.
+        //
+        // Specifically,
+        // `dp[0]` stores how to get sum 1,
+        // `dp[1]` stores how to get sum 2,
+        // so on and so forth.
+        let mut dp = vec![Vec::<Vec<i32>>::new(); target as usize];
+        candidates.iter().for_each(|&candidate| {
             // Q: what new combinations could be achieved using this idx?
-            for sum in (1..=dp.len()).rev() {
-                if (candidates[idx] as usize) <= sum {
+            (1..=dp.len()).rev().for_each(|sum| {
+                // Why reverse?
+                // Suppose with the new candidate, there's multiple way to add up to sum
+                // e.g. sum = 8, previously considered candidates are [2],
+                // if in-order i.e. no reverse, we'd try first sum 5, yeilding 2+3*1=5
+                // then try 8, yeilding 5+3*1=8,
+                // and we'd record BOTH 2+3*2=8 AND 5+3*1=(2+3)+3*1=8
+                // yeilding [2, 3, 3] twice, one since 2+3*2, one since 5+3*1=(2+3)+3*1
+                // Reversing the order eliminates such issue.
+                if (candidate as usize) <= sum {
                     // New candidate is only possible if it's not larger than
                     // designated target sum.
-                    // Also, this problem explicity allows repeated selection
-                    let mut tmp = Vec::new();
+                    // Note that problem explicity allows for repeated selection
+                    let mut new_solutions = Vec::new();
+                    if sum % candidate as usize == 0 {
+                        new_solutions.extend(vec![vec![candidate; sum / candidate as usize]]);
+                    }
                     let mut repeat = 1;
-                    while sum > (candidates[idx] as usize * repeat) {
-                        let mut tmptmp = dp[sum - 1 - repeat * candidates[idx] as usize].clone();
-                        tmptmp.iter_mut().for_each(|vec| {
+                    while sum > (candidate as usize * repeat) {
+                        let mut recorded_solutions =
+                            dp[sum - 1 - repeat * candidate as usize].clone();
+                        recorded_solutions.iter_mut().for_each(|vec| {
                             for _ in 0..repeat {
-                                vec.push(candidates[idx]);
+                                vec.push(candidate);
                             }
                         });
-                        tmp.extend(tmptmp);
+                        new_solutions.extend(recorded_solutions);
                         repeat += 1;
                     }
-                    if sum % candidates[idx] as usize == 0 {
-                        tmp.extend({
-                            let mut tmptmp = Vec::with_capacity(sum % candidates[idx] as usize);
-                            for _ in 0..sum / candidates[idx] as usize {
-                                tmptmp.push(candidates[idx]);
-                            }
-                            vec![tmptmp]
-                        });
-                    }
-                    dp[sum - 1].extend(tmp);
+                    dp[sum - 1].extend(new_solutions);
                 }
-            }
-        }
+            });
+        });
         dp.pop().unwrap()
     }
 }
