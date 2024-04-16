@@ -11,6 +11,13 @@ impl Solution {
         Self::partition_worker(s, &mut backtrack, 0, &mut ret);
         ret
     }
+    // DFS backtrack
+    // idea from
+    // [issac3@LC](https://www.notebookcheck.net/Framework-Laptop-13-5-Ryzen-7-7840U-review-So-much-better-than-the-Intel-version.756613.0.html)
+    // The gist is that for each index, consider possible local choice, memoize them in the
+    // backtrack, then proceed to investigate next appropriate index.
+    // Time is exponential: consider "aaaaa..." all 'a'
+    // Space is linear: DFS height and backtrack
     fn partition_worker(
         s: &[u8],
         backtrack: &mut Vec<Vec<u8>>,
