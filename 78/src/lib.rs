@@ -3,17 +3,28 @@ pub struct Solution;
 impl Solution {
     pub fn subsets(nums: Vec<i32>) -> Vec<Vec<i32>> {
         let mut powerset = Vec::with_capacity(2_usize.pow(nums.len() as u32));
-        Self::gen_subset_worker(&Vec::new(), 0, &nums, &mut powerset);
+        let mut subset = Vec::with_capacity(nums.len());
+        Self::gen_subset_worker(&mut subset, 0, &nums, &mut powerset);
         powerset
     }
-    fn gen_subset_worker(part: &[i32], idx: usize, set: &[i32], powerset: &mut Vec<Vec<i32>>) {
+
+    // How to generate powerset, i.e. iterate through all subsets?
+    // For each element, there's two cases: to take or not to take
+    // Ask this to every element till we ran out of elements, then we've got a particular subset.
+    // Record it.
+    fn gen_subset_worker(
+        subset: &mut Vec<i32>,
+        idx: usize,
+        set: &[i32],
+        powerset: &mut Vec<Vec<i32>>,
+    ) {
         if let Some(&i) = set.get(idx) {
-            Self::gen_subset_worker(&part, idx + 1, set, powerset);
-            let mut part = part.to_owned();
-            part.push(i);
-            Self::gen_subset_worker(&part, idx + 1, set, powerset);
+            Self::gen_subset_worker(subset, idx + 1, set, powerset);
+            subset.push(i);
+            Self::gen_subset_worker(subset, idx + 1, set, powerset);
+            subset.pop();
         } else {
-            powerset.push(part.to_owned());
+            powerset.push(subset.to_owned());
         }
     }
 }
