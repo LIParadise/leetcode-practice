@@ -12,6 +12,9 @@ impl Solution {
     // For each element, there's two cases: to take or not to take
     // Ask this to every element till we ran out of elements, then we've got a particular subset.
     // Record it.
+    //
+    // In essence this is DFS on a binary tree, in which the binary part stems from aforementioned
+    // "to take or not to take" question.
     fn gen_subset_worker(
         subset: &mut Vec<i32>,
         idx: usize,
