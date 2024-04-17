@@ -6,62 +6,42 @@ impl Solution {
     /// is a palindrome.
     pub fn partition(s: String) -> Vec<Vec<String>> {
         let s = s.as_bytes();
-        let mut answers = Vec::with_capacity(s.len());
-        for subprob_len in 1..=s.len() {
-            // Dynamic programming
-            //
-            // For sub-problem, we have:
-            // substr = left + right
-            //
-            // right => last part, deemed as no further partition required, check if palindrome
-            // left => may be further partitioned, check DP table
-            //
-            // If right is indeed a palindrome,
-            // combine them to get some answers for the sub-problem
-            // How?
-            // DP table specifies different ways to decompose left into palindromes
-            // For each way in DP table, append right to it.
-            //
-            // Example:
-            // substr = "aab"
-            // consider (left = "aa") + (right = "b") = substr
-            // Via DP, we know left has 2 ways of decomposition:
-            // [["a", "a"], ["aa"]]
-            // Append "b" to all the possible ways, after which we get
-            // [["a", "a", "b"], ["aa", "b"]]
-            //
-            // Remember to iterate through all possible "right" and collect them.
-            //
-            // Complexity:
-            // Both time and space are exponential:
-            // consider input be same char over and over again, e.g. "aaaaaaaa..."
-            // space:
-            // T(1) = 1
-            // T(n) = 1 + T(1) + T(2) + ... + T(n-1)
-            // and it's straightforward to see T(n) = 2^n
-            // time: basically a traversal through all used space, hence same complexity.
-            let mut answers_to_subprob =
-                Vec::with_capacity(answers.last().map_or(1, |a: &Vec<Vec<String>>| a.len()));
-            for last_part_len in 1..=subprob_len {
-                let last_part = &s[subprob_len - last_part_len..subprob_len];
-                if Self::is_palindrome(last_part) {
-                    if last_part_len == subprob_len {
-                        answers_to_subprob
-                            .push(vec![std::str::from_utf8(last_part).unwrap().to_owned()])
-                    } else {
-                        let answers_to_prev_parts = &answers[subprob_len - last_part_len - 1];
-                        answers_to_subprob.extend(answers_to_prev_parts.iter().map(|strings| {
-                            let mut ret = strings.clone();
-                            ret.push(std::str::from_utf8(last_part).unwrap().to_owned());
-                            ret
-                        }));
-                    }
+        let mut ret = Vec::new();
+        let mut backtrack = Vec::new();
+        Self::partition_worker(s, &mut backtrack, 0, &mut ret);
+        ret
+    }
+    // DFS backtrack
+    // idea from
+    // [issac3@LC](https://www.notebookcheck.net/Framework-Laptop-13-5-Ryzen-7-7840U-review-So-much-better-than-the-Intel-version.756613.0.html)
+    // The gist is that for each index, consider possible local choice, memoize them in the
+    // backtrack, then proceed to investigate next appropriate index.
+    // Time is exponential: consider "aaaaa..." all 'a'
+    // Space is linear: DFS height and backtrack
+    fn partition_worker(
+        s: &[u8],
+        backtrack: &mut Vec<Vec<u8>>,
+        start_idx: usize,
+        solutions: &mut Vec<Vec<String>>,
+    ) {
+        if start_idx == s.len() {
+            solutions.push(
+                backtrack
+                    .iter()
+                    .cloned()
+                    .map(|u8_arr| String::from_utf8(u8_arr).unwrap())
+                    .collect(),
+            );
+        } else if start_idx < s.len() {
+            (start_idx + 1..=s.len()).for_each(|end_idx| {
+                let new_palindrome = &s[start_idx..end_idx];
+                if Self::is_palindrome(new_palindrome) {
+                    backtrack.push(new_palindrome.to_owned());
+                    Self::partition_worker(s, backtrack, end_idx, solutions);
+                    backtrack.pop();
                 }
-            }
-            answers.push(answers_to_subprob);
+            })
         }
-
-        answers.pop().unwrap_or(Vec::new())
     }
 
     fn is_palindrome(arr: &[u8]) -> bool {
@@ -120,6 +100,7 @@ mod tests {
     }
 
     fn compare(my_answer: Vec<Vec<String>>, ans: Vec<Vec<&str>>) {
+        assert_eq!(my_answer.len(), ans.len());
         use std::collections::HashSet as Hash;
         let mut my_hash = Hash::new();
         my_hash.extend(
