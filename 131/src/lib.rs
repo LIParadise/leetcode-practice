@@ -1,5 +1,6 @@
 pub struct Solution;
 
+use std::str::FromStr;
 impl Solution {
     /// Give all partitioning of input
     /// s.t. for each partitioning, each of the partitioned substrings itself
@@ -18,29 +19,29 @@ impl Solution {
     // backtrack, then proceed to investigate next appropriate index.
     // Time is exponential: consider "aaaaa..." all 'a'
     // Space is linear: DFS height and backtrack
-    fn partition_worker(
-        s: &[u8],
-        backtrack: &mut Vec<Vec<u8>>,
+    fn partition_worker<'a>(
+        s: &'a [u8],
+        backtrack: &mut Vec<&'a [u8]>,
         start_idx: usize,
         solutions: &mut Vec<Vec<String>>,
     ) {
-        if start_idx == s.len() {
-            solutions.push(
+        match start_idx.cmp(&s.len()) {
+            std::cmp::Ordering::Equal => solutions.push(
                 backtrack
                     .iter()
                     .cloned()
-                    .map(|u8_arr| String::from_utf8(u8_arr).unwrap())
+                    .map(|u8_arr| String::from_str(std::str::from_utf8(u8_arr).unwrap()).unwrap())
                     .collect(),
-            );
-        } else if start_idx < s.len() {
-            (start_idx + 1..=s.len()).for_each(|end_idx| {
+            ),
+            std::cmp::Ordering::Less => (start_idx + 1..=s.len()).for_each(|end_idx| {
                 let new_palindrome = &s[start_idx..end_idx];
                 if Self::is_palindrome(new_palindrome) {
-                    backtrack.push(new_palindrome.to_owned());
+                    backtrack.push(new_palindrome);
                     Self::partition_worker(s, backtrack, end_idx, solutions);
                     backtrack.pop();
                 }
-            })
+            }),
+            _ => {}
         }
     }
 
