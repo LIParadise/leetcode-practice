@@ -176,23 +176,29 @@ impl Solution {
         let mut min_cut_dp = MinHeap::from([CounterWithIndex { i: 0, cnt: 0 }].as_slice());
         (1..s.len()).for_each(|last| {
             let mut stack = Vec::new();
-            while let Some(prev_min_cut) = min_cut_dp.pop_min() {
-                if Self::is_palindrome(prev_min_cut.i + 1, last, mana.1.as_slice()) {
-                    stack.into_iter().for_each(|x| min_cut_dp.insert(x));
-                    min_cut_dp.insert(CounterWithIndex {
-                        i: last,
-                        cnt: prev_min_cut.cnt + 1,
-                    });
-                    break;
-                } else {
-                    stack.push(prev_min_cut);
+            if Self::is_palindrome(0, last, mana.1.as_slice()) {
+                // substring itself a palindrome, no cut required
+                min_cut_dp.insert(CounterWithIndex { i: last, cnt: 0 });
+            } else {
+                // substring ain't palindrome, try to divide using DP memoization
+                while let Some(prev_min_cut) = min_cut_dp.pop_min() {
+                    if Self::is_palindrome(prev_min_cut.i + 1, last, mana.1.as_slice()) {
+                        stack.into_iter().for_each(|x| min_cut_dp.insert(x));
+                        min_cut_dp.insert(CounterWithIndex {
+                            i: last,
+                            cnt: prev_min_cut.cnt + 1,
+                        });
+                        min_cut_dp.insert(prev_min_cut);
+                        break;
+                    } else {
+                        stack.push(prev_min_cut);
+                    }
                 }
             }
             if min_cut_dp.len() != last + 1 {
                 panic!("DP not gathering required info on subproblem, abort.");
             }
         });
-        dbg!(&min_cut_dp);
         min_cut_dp
             .get_by(
                 &CounterWithIndex {
