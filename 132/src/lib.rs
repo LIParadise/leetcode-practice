@@ -27,6 +27,7 @@ impl<T: Eq + Ord> MinHeap<T> {
     pub fn pop_min(&mut self) -> Option<T> {
         self.remove_at(0)
     }
+    /// Private helper, remove element at index in underlying array
     fn remove_at(&mut self, i: usize) -> Option<T> {
         let last_idx = self.arr.len() - 1;
         self.arr.swap(i, last_idx);
@@ -42,12 +43,14 @@ impl<T: Eq + Ord> MinHeap<T> {
         }
         ret
     }
+    /// Given search predicate, return reference to it if exists.
     pub fn get_by<F>(&self, t: &T, f: F) -> Option<&T>
     where
         F: FnMut(&T, &T) -> bool,
     {
         self.find_by(t, f).and_then(|i| self.arr.get(i))
     }
+    /// Private helper, given search predicate, return index to it if exists.
     fn find_by<F>(&self, t: &T, mut f: F) -> Option<usize>
     where
         F: FnMut(&T, &T) -> bool,
@@ -58,19 +61,23 @@ impl<T: Eq + Ord> MinHeap<T> {
             .enumerate()
             .find_map(|(i, elem)| if f(t, elem) { Some(i) } else { None })
     }
+    /// Given search predicate, if exists, remove and return it, otherwise return None
     pub fn remove_by<F>(&mut self, t: &T, f: F) -> Option<T>
     where
         F: FnMut(&T, &T) -> bool,
     {
         Self::find_by(self, t, f).and_then(|i| self.remove_at(i))
     }
-    pub fn modify_key_by<F>(&mut self, old: &T, new: T, f: F) -> Option<usize>
+    /// Given search predicate, check if such element exists.
+    /// If so, update it with supplied, return `Some` referencing it.
+    /// Otherwise it's `None`.
+    pub fn modify_key_by<F>(&mut self, old: &T, new: T, f: F) -> Option<&T>
     where
         F: FnMut(&T, &T) -> bool,
     {
-        Self::find_by(self, old, f).map(|i| {
-            match new.cmp(old) {
-                std::cmp::Ordering::Equal => {}
+        Self::find_by(self, old, f)
+            .map(|i| match new.cmp(old) {
+                std::cmp::Ordering::Equal => i,
                 std::cmp::Ordering::Less => {
                     self.arr[i] = new;
                     Self::float_up(self, i)
@@ -79,11 +86,10 @@ impl<T: Eq + Ord> MinHeap<T> {
                     self.arr[i] = new;
                     Self::heapify_down(self, i)
                 }
-            }
-            i
-        })
+            })
+            .and_then(|i| self.arr.get(i))
     }
-    fn float_up(&mut self, mut u: usize) {
+    fn float_up(&mut self, mut u: usize) -> usize {
         let arr = &mut self.arr;
         while let Some(p) = Self::parent(u) {
             if arr[u].lt(&arr[p]) {
@@ -93,8 +99,9 @@ impl<T: Eq + Ord> MinHeap<T> {
                 break;
             }
         }
+        u
     }
-    fn heapify_down(&mut self, mut u: usize) {
+    fn heapify_down(&mut self, mut u: usize) -> usize {
         loop {
             let l = Self::left_child(u);
             let r = Self::right_child(u);
@@ -104,6 +111,9 @@ impl<T: Eq + Ord> MinHeap<T> {
                     extremal_idx = l;
                 }
             } else {
+                // heap is complete binary tree
+                // no left child means no right child
+                // which in turn means it's itself a leaf at the bottom
                 break;
             }
             if let Some(child) = self.arr.get(r) {
@@ -118,6 +128,7 @@ impl<T: Eq + Ord> MinHeap<T> {
                 break;
             }
         }
+        u
     }
     fn parent(u: usize) -> Option<usize> {
         if u > 0 {
@@ -171,45 +182,48 @@ impl Ord for CounterWithIndex {
 
 impl Solution {
     pub fn min_cut(s: String) -> i32 {
-        let s = s.as_bytes();
-        let mana = Self::manacher(s);
-        let mut min_cut_dp = MinHeap::from([CounterWithIndex { i: 0, cnt: 0 }].as_slice());
-        (1..s.len()).for_each(|last| {
-            let mut stack = Vec::new();
-            if Self::is_palindrome(0, last, mana.1.as_slice()) {
-                // substring itself a palindrome, no cut required
-                min_cut_dp.insert(CounterWithIndex { i: last, cnt: 0 });
-            } else {
-                // substring ain't palindrome, try to divide using DP memoization
-                while let Some(prev_min_cut) = min_cut_dp.pop_min() {
-                    if Self::is_palindrome(prev_min_cut.i + 1, last, mana.1.as_slice()) {
-                        stack.into_iter().for_each(|x| min_cut_dp.insert(x));
-                        min_cut_dp.insert(CounterWithIndex {
-                            i: last,
-                            cnt: prev_min_cut.cnt + 1,
-                        });
-                        min_cut_dp.insert(prev_min_cut);
-                        break;
-                    } else {
-                        stack.push(prev_min_cut);
+        if s.len() == 0 {
+            0
+        } else {
+            let s = s.as_bytes();
+            let mana = Self::manacher(s);
+            let mut min_cut_dp = MinHeap::from([CounterWithIndex { i: 0, cnt: 0 }].as_slice());
+            (1..s.len()).for_each(|last| {
+                let mut stack = Vec::new();
+                if Self::is_palindrome(0, last, mana.1.as_slice()) {
+                    // substring itself a palindrome, no cut required
+                    min_cut_dp.insert(CounterWithIndex { i: last, cnt: 0 });
+                } else {
+                    // substring ain't palindrome, try to divide using DP memoization
+                    while let Some(prev_min_cut) = min_cut_dp.pop_min() {
+                        if Self::is_palindrome(prev_min_cut.i + 1, last, mana.1.as_slice()) {
+                            stack.into_iter().for_each(|x| min_cut_dp.insert(x));
+                            min_cut_dp.insert(CounterWithIndex {
+                                i: last,
+                                cnt: prev_min_cut.cnt + 1,
+                            });
+                            min_cut_dp.insert(prev_min_cut);
+                            break;
+                        } else {
+                            stack.push(prev_min_cut);
+                        }
                     }
                 }
-            }
-            if min_cut_dp.len() != last + 1 {
-                panic!("DP not gathering required info on subproblem, abort.");
-            }
-        });
-        min_cut_dp
-            .get_by(
-                &CounterWithIndex {
-                    i: s.len() - 1,
-                    cnt: 0,
-                },
-                |c0: &CounterWithIndex, c1: &CounterWithIndex| c0.i == c1.i,
-            )
-            .map_or(0, |c| c.cnt)
-            .try_into()
-            .unwrap()
+            });
+            min_cut_dp
+                .get_by(
+                    &CounterWithIndex {
+                        // overflow won't occur here since empty case handled earlier
+                        i: s.len() - 1,
+                        cnt: 0,
+                    },
+                    |c0: &CounterWithIndex, c1: &CounterWithIndex| c0.i == c1.i,
+                )
+                .map(|c| c.cnt)
+                .unwrap()
+                .try_into()
+                .unwrap()
+        }
     }
 
     /// Manacher's algorithm.
@@ -357,13 +371,14 @@ mod tests {
 
         let arr = &[2, 7, 1, 8, 2, 8, 1, 8, 2, 8, 4, 5, 9];
         let mut heap = MinHeap::from(arr.as_slice());
-        assert!(heap.modify_key_by(&1, 10, |i, j| i == j).is_some());
-        assert!(heap.modify_key_by(&1, 10, |i, j| i == j).is_some());
-        assert!(heap.modify_key_by(&1, 10, |i, j| i == j).is_none());
-        assert!(heap.modify_key_by(&8, 6, |i, j| i == j).is_some());
-        assert!(heap.modify_key_by(&8, 7, |i, j| i == j).is_some());
-        assert!(heap.modify_key_by(&9, 3, |i, j| i == j).is_some());
-        assert!(heap.modify_key_by(&2, 1, |i, j| i == j).is_some());
+        assert_eq!(heap.modify_key_by(&1, 10, |i, j| i == j), Some(&10));
+        assert_eq!(heap.modify_key_by(&1, 10, |i, j| i == j), Some(&10));
+        assert_eq!(heap.modify_key_by(&1, 10, |i, j| i == j), None);
+        assert_eq!(heap.modify_key_by(&10, 10, |i, j| i == j), Some(&10));
+        assert_eq!(heap.modify_key_by(&8, 6, |i, j| i == j), Some(&6));
+        assert_eq!(heap.modify_key_by(&8, 7, |i, j| i == j), Some(&7));
+        assert_eq!(heap.modify_key_by(&9, 3, |i, j| i == j), Some(&3));
+        assert_eq!(heap.modify_key_by(&2, 1, |i, j| i == j), Some(&1));
         let mut ans = vec![2, 7, 10, 6, 2, 7, 10, 8, 1, 8, 4, 5, 3];
         ans.sort_unstable();
         ans.into_iter().for_each(|x| {
