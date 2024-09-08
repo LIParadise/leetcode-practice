@@ -1,0 +1,9 @@
+[package]
+name = "lc_592_fraction_addition_and_subtraction"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[features]
+local_test = []
