@@ -173,6 +173,13 @@ impl Solution {
                 // '[-+]?[[:digit:]]+\/[[:digit:]]+'
                 // note that we may or may not have sign,
                 // skip 1 is ok since there's at least one digit, slash, and yet another digit
+                //
+                // note that directly calling skip 1 is error-prone:
+                // `position` index would be offset, so extra care e.g. unwrap with (len - 1)
+                // then finally plus 1,
+                // but then we'd need to deal with underflow...
+                //
+                // just use index.
                 .enumerate()
                 .position(|(idx, ch)| idx != 0 && (ch == '+' || ch == '-'))
                 .unwrap_or(expression.len());
