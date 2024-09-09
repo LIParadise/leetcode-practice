@@ -1,16 +1,35 @@
-/// Given LeetCode problem e.g. "240. Search a 2D Matrix II",
-/// try to make a library crate "lc_240_search_a_2d_matrix_ii" in folder "240"
-/// with some simple snippet in corresponding "src/lib.rs".
-///
-/// Usage:
-/// <exe> "240. Search a 2D Matrix II"
-/// Notice the quotes!
+//! Given LeetCode problem e.g. "240. Search a 2D Matrix II",
+//! try to make a library crate "lc_240_search_a_2d_matrix_ii" in folder "240"
+//! with some simple snippet in corresponding "src/lib.rs".
+//!
+//! Usage:
+//! <exe> "240. Search a 2D Matrix II"
+//! Notice the quotes!
+
 use regex::Regex;
 use std::env;
 use std::io::Write;
+use std::io::{Error, ErrorKind};
+use std::path::Path;
 use std::process::Command;
 
-const LIB_RS_CONTENTS: &'static str = "pub struct Solution;
+const LIB_RS_CONTENTS: &str = r#"pub struct Solution;
+
+macro_rules! lprintln {
+    // Match when a format string and additional arguments are provided
+    ($fmt:expr, $($arg:tt)*) => {{
+        if cfg!(feature = "local_test") {
+            println!($fmt, $($arg)*);
+        }
+    }};
+
+    // Match when only a format string is provided
+    ($fmt:expr) => {{
+        if cfg!(feature = "local_test") {
+            println!($fmt);
+        }
+    }};
+}
 
 impl Solution {}
 
@@ -21,43 +40,60 @@ mod tests {
     fn test_soln() {
         todo!()
     }
-}";
+}"#;
 
-fn main() {
+fn main() -> Result<(), Error> {
     let pwd = env::current_dir()
         .expect("Cannot work in this directory, possibly because lack of permissions?");
-    let arg: String = env::args().skip(1).collect();
-    println!("You seem to want to solve LeetCode \"{arg}\"");
-    let re_tokens = Regex::new(r"[[:space:]]?([[:word:]]*)\.?").unwrap();
-    let mut crate_dir_name = String::from(
-        re_tokens
-            .captures(&arg)
-            .unwrap()
-            .get(1)
-            .map(|s| s.as_str())
-            .expect("Invalid name, abort."),
-    );
-    if let Err(_) = crate_dir_name.trim().parse::<usize>() {
-        println!("Invalid name, abort.");
-    }
-    let mut crate_name = String::from("lc");
-    crate_name.push_str(&re_tokens.replace_all(&arg, "_$1"));
-    crate_name = crate_name.to_lowercase();
 
-    while std::path::Path::new(&crate_dir_name).exists() {
-        crate_dir_name.push_str("_rust");
+    let args = Vec::from_iter(env::args().skip(1));
+    if args.len() != 1 {
+        return Err(Error::from(ErrorKind::InvalidInput));
     }
+    let arg = args.into_iter().next().unwrap();
+    println!("You seem to want to solve LeetCode \"{arg}\"");
+
+    let re =
+        Regex::new(r"(?<problem_serial>[[:digit:]]+)\. (?<problem_name>[[:alnum:] ]+)").unwrap();
+
+    let problem_serial = re
+        .captures(&arg)
+        .ok_or(ErrorKind::UnexpectedEof)?
+        .name("problem_serial")
+        .as_ref()
+        .map(regex::Match::as_str)
+        .ok_or(ErrorKind::UnexpectedEof)?
+        .trim();
+
+    let problem_name = re
+        .captures(&arg)
+        .ok_or(ErrorKind::UnexpectedEof)?
+        .name("problem_name")
+        .as_ref()
+        .map(regex::Match::as_str)
+        .ok_or(ErrorKind::UnexpectedEof)?;
+
+    let crate_name =
+        format!("lc_{}_{}", problem_serial, problem_name.replace(' ', "_")).to_ascii_lowercase();
+    // prevent accidentally ruin existing data
+    let mut crate_dir_name = problem_serial.to_owned();
+    while std::path::Path::new(&crate_dir_name).exists() {
+        crate_dir_name += "_rust";
+    }
+    let crate_dir_name = crate_dir_name.to_ascii_lowercase();
+
     println!(
-        "Create crate \"{crate_dir_name}\" in {}? (y/N)",
+        r#"Run 'cargo init "{crate_dir_name}" --name "{crate_name}"' in "{}"? (y/N)"#,
         pwd.display()
     );
+
     let mut input = String::new();
-    std::io::stdin().read_line(&mut input).unwrap();
-    match input.trim().chars().take(1).next() {
-        Some('y') | Some('Y') => println!("Got it. Try to launch `cargo...`"),
+    std::io::stdin().read_line(&mut input)?;
+    match input.trim() {
+        "y" | "Y" => println!("Got it. Try to launch `cargo...`"),
         _ => {
             println!("Abort.");
-            std::process::exit(1)
+            return Err(Error::from(ErrorKind::Interrupted));
         }
     }
 
@@ -65,22 +101,17 @@ fn main() {
         .arg("init")
         .arg(&crate_dir_name)
         .arg("--name")
-        .arg(&crate_name)
+        .arg(crate_name)
         .arg("--lib")
         .arg("--vcs")
         .arg("none")
-        .output()
-        .expect("Cannot launch cargo.");
+        .output()?;
 
-    let mut lib_rs_filename = "./".to_string();
-    lib_rs_filename.push_str(&crate_dir_name);
-    lib_rs_filename.push_str("/src/lib.rs");
+    let lib_rs = Path::new("./").join(&crate_dir_name).join("src/lib.rs");
     let mut lib_rs = std::fs::OpenOptions::new()
         .write(true)
         .truncate(true)
-        .open(&lib_rs_filename)
-        .expect("Cannot work with lib.rs???");
-    for line in LIB_RS_CONTENTS.split('\n') {
-        writeln!(&mut lib_rs, "{}", line).unwrap();
-    }
+        .open(lib_rs)?;
+    write!(&mut lib_rs, "{}", LIB_RS_CONTENTS)?;
+    Ok(())
 }
