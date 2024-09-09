@@ -43,13 +43,12 @@ mod tests {
 }"#;
 
 fn main() -> Result<(), Error> {
-    let pwd = env::current_dir()
-        .expect("Cannot work in this directory, possibly because lack of permissions?");
-
+    let pwd = env::current_dir()?;
     let args = Vec::from_iter(env::args().skip(1));
     if args.len() != 1 {
         return Err(Error::from(ErrorKind::InvalidInput));
     }
+    // len is 1 so impossible to panic here
     let arg = args.into_iter().next().unwrap();
     println!("You seem to want to solve LeetCode \"{arg}\"");
 
