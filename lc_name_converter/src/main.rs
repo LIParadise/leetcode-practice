@@ -15,6 +15,17 @@ use std::process::Command;
 
 const LIB_RS_CONTENTS: &str = r#"pub struct Solution;
 
+impl Solution {}
+
+#[cfg(test)]
+mod tests {
+    use crate::Solution;
+    #[test]
+    fn test_soln() {
+        todo!()
+    }
+}
+
 macro_rules! lprintln {
     // Match when a format string and additional arguments are provided
     ($fmt:expr, $($arg:tt)*) => {{
@@ -29,17 +40,6 @@ macro_rules! lprintln {
             println!($fmt);
         }
     }};
-}
-
-impl Solution {}
-
-#[cfg(test)]
-mod tests {
-    use crate::Solution;
-    #[test]
-    fn test_soln() {
-        todo!()
-    }
 }"#;
 
 fn main() -> Result<(), Error> {
