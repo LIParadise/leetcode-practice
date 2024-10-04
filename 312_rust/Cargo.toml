@@ -1,0 +1,6 @@
+[package]
+name = "lc_312_burst_balloons"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
