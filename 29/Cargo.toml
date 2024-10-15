@@ -1,0 +1,6 @@
+[package]
+name = "lc_29_divide_two_integers"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
