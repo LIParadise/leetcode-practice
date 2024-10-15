@@ -18,15 +18,11 @@ impl Solution {
         let denominator = NonZeroU32::new(denominator.get().unsigned_abs()).unwrap();
         let max_shift_amount = {
             const BITS: usize = size_of::<i32>() * 8;
-            (1..BITS)
-                .take_while(|&shift| {
-                    // https://users.rust-lang.org/t/5488
-                    denominator.get() << shift >= (denominator.get() << (shift - 1))
-                        && (denominator.get() << shift) - (denominator.get() << (shift - 1))
-                            == (denominator.get() << (shift - 1))
-                })
-                .last()
-                .unwrap_or(0)
+            BITS - 1
+                - (0..BITS)
+                    .filter(|&shift| (1 << shift) & denominator.get() == 1 << shift)
+                    .last()
+                    .unwrap()
         };
         let quotient = (0..=max_shift_amount)
             .rev()
