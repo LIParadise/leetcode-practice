@@ -1,0 +1,6 @@
+[package]
+name = "lc_437_path_sum_iii"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
