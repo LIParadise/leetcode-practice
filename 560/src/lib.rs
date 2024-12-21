@@ -2,21 +2,26 @@ pub struct Solution;
 
 impl Solution {
     pub fn subarray_sum(mut nums: Vec<i32>, k: i32) -> i32 {
+        use std::collections::BTreeMap;
         Self::inplace_into_prefix_sum(&mut nums);
         nums.iter()
-            .enumerate()
-            .rev()
-            .fold(0, |ret, (idx, &partial_sum_longer)| {
-                ret + <usize as TryInto<i32>>::try_into(
-                    std::iter::once(&0)
-                        .chain(nums.iter().take(idx))
-                        .filter(|&&partial_sum_shorter| {
-                            partial_sum_longer - partial_sum_shorter == k
-                        })
-                        .count(),
-                )
-                .unwrap()
-            })
+            .fold(
+                (0, BTreeMap::new()),
+                |(ret, mut partial_sum_occurred_times), &partial_sum| {
+                    let &cnt_of_subarray_matches = partial_sum_occurred_times
+                        .get(&(partial_sum - k))
+                        .unwrap_or(&0);
+                    partial_sum_occurred_times
+                        .entry(partial_sum)
+                        .and_modify(|times| *times += 1)
+                        .or_insert(1);
+                    (
+                        cnt_of_subarray_matches + ret + if partial_sum == k { 1 } else { 0 },
+                        partial_sum_occurred_times,
+                    )
+                },
+            )
+            .0
     }
     fn inplace_into_prefix_sum(nums: &mut [i32]) {
         nums.iter_mut()
