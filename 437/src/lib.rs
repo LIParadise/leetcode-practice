@@ -40,61 +40,58 @@ impl TryFrom<&[Option<i32>]> for TreeNode {
     }
 }
 
-pub use std::cell::RefCell;
-pub use std::rc::Rc;
+use std::collections::BTreeMap;
+pub use std::{cell::RefCell, rc::Rc};
 
 impl Solution {
     pub fn path_sum(root: Option<Rc<RefCell<TreeNode>>>, target_sum: i32) -> i32 {
-        let mut targets = vec![target_sum as i64];
+        let mut partial_sum_ocurrence_counts = BTreeMap::from_iter([(0, 1)]);
         root.as_ref()
             .and_then(|root| root.try_borrow().ok())
-            .map(|root| Self::path_sum_dfs_worker(&root, &mut targets))
+            .map(|root| {
+                Self::path_sum_dfs_worker(target_sum, &root, 0, &mut partial_sum_ocurrence_counts)
+            })
             .and_then(|u| u.try_into().ok())
             .unwrap_or(0)
     }
-    fn path_sum_dfs_worker(node: &TreeNode, targets: &mut Vec<i64>) -> usize {
-        mod view {
-            #[derive(Debug)]
-            pub struct View<'a>(&'a mut Vec<i64>);
-            impl<'a> View<'a> {
-                pub fn new(arr: &'a mut Vec<i64>, i: i32) -> (usize, Self) {
-                    arr[1..].iter_mut().for_each(|x| *x += i as i64);
-                    arr.push(i as i64);
-                    let ret = match &arr[..] {
-                        [orig_target, sums_of_nodes @ ..] => sums_of_nodes
-                            .iter()
-                            .filter(|sum| sum == &orig_target)
-                            .count(),
-                        [] => 0,
-                    };
-                    (ret, Self(arr))
-                }
-            }
-            impl<'a> Drop for View<'a> {
-                fn drop(&mut self) {
-                    if let Some(i) = self.0.pop() {
-                        self.0[1..].iter_mut().for_each(|sum| *sum -= i);
-                    }
-                }
-            }
-            impl<'a> std::ops::Deref for View<'a> {
-                type Target = Vec<i64>;
-                fn deref(&self) -> &Self::Target {
-                    &self.0
-                }
-            }
-            impl<'a> std::ops::DerefMut for View<'a> {
-                fn deref_mut(&mut self) -> &mut Self::Target {
-                    &mut self.0
-                }
-            }
+    fn path_sum_dfs_worker(
+        target: i32,
+        node: &TreeNode,
+        ancestors_sum: i64,
+        partial_sum_ocurrence_counts: &mut BTreeMap<i64, usize>,
+    ) -> usize {
+        let mut ret = 0;
+        let sum_of_node_and_ancestors = node.val as i64 + ancestors_sum;
+        ret += partial_sum_ocurrence_counts
+            .get(&(sum_of_node_and_ancestors - target as i64))
+            .unwrap_or(&0);
+        partial_sum_ocurrence_counts
+            .entry(sum_of_node_and_ancestors)
+            .and_modify(|cnt| *cnt += 1)
+            .or_insert(1);
+
+        if let Some(left) = node.left.as_ref().and_then(|left| left.try_borrow().ok()) {
+            ret += Self::path_sum_dfs_worker(
+                target,
+                &left,
+                sum_of_node_and_ancestors,
+                partial_sum_ocurrence_counts,
+            );
         }
-        let (mut ret, mut view) = dbg!(view::View::new(targets, node.val));
-        if let Some(l) = node.left.as_ref().and_then(|l| l.try_borrow().ok()) {
-            ret += Self::path_sum_dfs_worker(&l, &mut view);
+        if let Some(right) = node
+            .right
+            .as_ref()
+            .and_then(|right| right.try_borrow().ok())
+        {
+            ret += Self::path_sum_dfs_worker(
+                target,
+                &right,
+                sum_of_node_and_ancestors,
+                partial_sum_ocurrence_counts,
+            );
         }
-        if let Some(r) = node.right.as_ref().and_then(|r| r.try_borrow().ok()) {
-            ret += Self::path_sum_dfs_worker(&r, &mut view);
+        if let Some(cnt) = partial_sum_ocurrence_counts.get_mut(&sum_of_node_and_ancestors) {
+            *cnt -= 1;
         }
         ret
     }
@@ -126,5 +123,34 @@ mod tests {
         .map(Rc::new)
         .ok();
         assert_eq!(Solution::path_sum(tree, 8), 3);
+
+        let tree = crate::TreeNode::try_from(
+            [
+                Some(5),
+                Some(4),
+                Some(8),
+                Some(11),
+                None,
+                Some(13),
+                Some(4),
+                Some(7),
+                Some(2),
+                None,
+                None,
+                Some(5),
+                Some(1),
+            ]
+            .as_slice(),
+        )
+        .map(RefCell::new)
+        .map(Rc::new)
+        .ok();
+        assert_eq!(Solution::path_sum(tree, 22), 3);
+
+        let tree = crate::TreeNode::try_from([Some(1)].as_slice())
+            .map(RefCell::new)
+            .map(Rc::new)
+            .ok();
+        assert_eq!(Solution::path_sum(tree, 0), 0);
     }
 }
