@@ -1,0 +1,6 @@
+[package]
+name = "lc_560_subarray_sum_equals_k"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
