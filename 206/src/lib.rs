@@ -23,13 +23,21 @@ impl ListNode {
 
 impl FromIterator<Box<ListNode>> for Option<Box<ListNode>> {
     fn from_iter<T: IntoIterator<Item = Box<ListNode>>>(iter: T) -> Self {
-        let mut iter = iter.into_iter();
-        let mut ret = iter.next();
-        let mut tail;
-        if ret.is_some() {
-            tail = &mut ret.as_mut().unwrap().next;
-            for list_node in iter {
-                *tail = Some(list_node);
+        let iter = iter.into_iter();
+        let mut ret = None;
+        let mut tail = &mut ret;
+        for node in iter {
+            tail.replace(node);
+            /*
+             * `while let` would be more elegant,
+             * but the borrow checker doesn't work out:
+             * the pattern becomes borrowed across iterator loop.
+             */
+            /*
+             * if node itself is already head of list,
+             * make it s.t. result is concatenation of lists
+             */
+            while tail.is_some() {
                 tail = &mut tail.as_mut().unwrap().next;
             }
         }
@@ -157,5 +165,21 @@ mod tests {
             assert!(data.is_empty());
             assert!(v.is_empty());
         }
+
+        let vvv = (0..3)
+            .flat_map(|_| data.iter())
+            .cloned()
+            .map(<T as Into<i32>>::into)
+            .collect::<Vec<_>>();
+        let lll =
+            Option::<Box<ListNode>>::from_iter((0..3).flat_map(|_| make_list(data).into_iter()));
+        dbg!(&lll);
+        assert_eq!(
+            vvv.into_iter()
+                .zip(lll.into_iter().flatten())
+                .inspect(|(v, l)| { assert_eq!(v, &l.val) })
+                .count(),
+            data.len() * 3
+        );
     }
 }
