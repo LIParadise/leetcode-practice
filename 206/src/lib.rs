@@ -74,11 +74,35 @@ impl Solution {
             None => None,
             Some(orig_list) => {
                 let (mut ret, mut orig_tail) = orig_list.split_head_tail();
-                while let Some(tail) = orig_tail {
-                    let (mut node, remained) = tail.split_head_tail();
+                while let Some((mut node, remained)) = orig_tail.map(ListNode::split_head_tail) {
                     node.next = Some(ret);
-                    ret = node;
-                    orig_tail = remained;
+
+                    {
+                        /*
+                         * This line is all the magic:
+                         *
+                         * We know it had just been moved into some other variable;
+                         * no `impl Drop` was called, since that variable was `Option::None`.
+                         *
+                         * The identifier is now invalid to be used,
+                         * since it's now sort of uninitialized: it had been moved!!!
+                         * BUT, what we're allowed to do is assign it a new value,
+                         * e.g. move other value in!
+                         *
+                         * In some sense it's just like one may say `let identifier;`
+                         * and not assign it any value till later in the code:
+                         * the identifier is free real estate.
+                         */
+                        ret = node;
+
+                        /*
+                         * this line does similar trick:
+                         * the value had been moved right in the beginning of the loop,
+                         * i.e. the `Option::map`,
+                         * so the identifier is free to accept new value to be moved in
+                         */
+                        orig_tail = remained;
+                    }
                 }
                 Some(ret)
             }
