@@ -1,5 +1,6 @@
 pub struct Solution;
 use std::cell::RefCell;
+use std::ops::Deref;
 use std::rc::Rc;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -44,18 +45,24 @@ impl TryFrom<&[Option<i32>]> for TreeNode {
 
 impl Solution {
     pub fn is_balanced(root: Option<Rc<RefCell<TreeNode>>>) -> bool {
-        root.map(Self::get_height_if_balanced)
+        root.as_deref()
+            .map(RefCell::borrow)
+            .as_ref()
+            .map(Self::get_height_if_balanced)
             .as_ref()
             .map(Result::is_ok)
             .unwrap_or(true)
     }
 
-    fn get_height_if_balanced(node: Rc<RefCell<TreeNode>>) -> Result<usize, ()> {
+    fn get_height_if_balanced<T>(node: &T) -> Result<usize, ()>
+    where
+        T: Deref<Target = TreeNode>,
+    {
         let left_height = node
-            .borrow()
             .left
             .as_ref()
-            .cloned() /* `Rc::clone` */
+            .map(|n| RefCell::borrow(&**n))
+            .as_ref()
             .map(Self::get_height_if_balanced)
             /*
              * bail out iff we have imbalanced subtree:
@@ -65,10 +72,10 @@ impl Solution {
              */
             .transpose()?;
         let right_height = node
-            .borrow()
             .right
             .as_ref()
-            .cloned() /* `Rc::clone` */
+            .map(|n| RefCell::borrow(&**n))
+            .as_ref()
             .map(Self::get_height_if_balanced)
             /*
              * bail out iff we have imbalanced subtree:
@@ -79,8 +86,7 @@ impl Solution {
             .transpose()?;
 
         // the `Err` variant is not invalid (inbalanced): just NIL node so height undefined
-        dbg!(node.borrow().val);
-        dbg!(match (left_height, right_height) {
+        match (left_height, right_height) {
             (None, None) => {
                 // both left and right subtree NIL, so height is zero
                 Ok(0)
@@ -95,7 +101,7 @@ impl Solution {
                 // inbalanced, return `Err` variant for callers to bail out
                 Err(())
             }
-        })
+        }
     }
 }
 
