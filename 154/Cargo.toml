@@ -1,0 +1,6 @@
+[package]
+name = "lc_154_find_minimum_in_rotated_sorted_array_ii"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
