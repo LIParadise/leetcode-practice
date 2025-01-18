@@ -10,35 +10,28 @@ impl Solution {
 
     fn rotated_sorted_unique_find_min_index(rotated_sorted_unique: &[i32]) -> Option<usize> {
         (!rotated_sorted_unique.is_empty()).then(|| {
-            if &rotated_sorted_unique[0] <= rotated_sorted_unique.last().unwrap() {
-                // though unique, the equal sign helps against arrays with only 1 element
-                return 0;
-            }
-
             let mut left = 0;
             let mut right = rotated_sorted_unique.len() - 1;
+            // invariant:
+            // the min is of index in the range `left..=right`
+            //
+            // note in particular it's more than loop invariant:
+            // the invariant is hold even after the loop break!
             while left < right {
-                // loop invariant:
-                // the min is of index in the range `left..=right`
                 let mid = Self::mid(left, right);
-                if mid == left {
-                    // Binary search based on integer may loop if off by only 1,
-                    // which ends up here.
+                if rotated_sorted_unique[mid] > rotated_sorted_unique[right] {
+                    // `mid` must NOT be index of min,
+                    // since it's larger than some other guy,
+                    // so we may exclude it.
                     //
-                    // Based on loop invariant and the elements being unique,
-                    // determine which of them is the min
-                    return if rotated_sorted_unique[left] < rotated_sorted_unique[right] {
-                        left
-                    } else {
-                        right
-                    };
-                } else if rotated_sorted_unique[left] < rotated_sorted_unique[mid] {
-                    left = mid;
+                    // `mid` is calculated s.t. it's always strictly smaller than `right`
+                    // thx to semantics of unsigned integer division is RTZ
+                    left = mid + 1;
                 } else {
-                    right = mid;
+                    right = mid
                 }
             }
-            unreachable!()
+            left
         })
     }
 
@@ -91,4 +84,3 @@ mod tests {
         assert_eq!(Solution::rotated_sorted_unique_find_min_index(&v), Some(43));
     }
 }
-
