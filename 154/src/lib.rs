@@ -20,18 +20,44 @@ impl Solution {
                 } else if arr[left] < arr[right] {
                     return left;
                 } else if arr[left] == arr[right] {
-                    // the tricky part
-                    // though left, mid, and right are equal,
-                    // left just might not be the real min,
-                    // e.g. `[0, -1, 0, 0, 0]` or `[0, 0, 0, -1, 0]`
-                    while arr[right] == arr[left] && left < right {
-                        right -= 1;
-                    }
-                    if arr[right] > arr[left] {
-                        return left;
-                    } else if arr[right] < arr[left] {
-                        left += 1;
-                    }
+                    /*
+                     * the tricky part
+                     * though left, mid, and right are equal,
+                     * left just might not be the real min,
+                     * e.g. `[0, -1, 0, 0, 0]` or `[0, 0, 0, -1, 0]`
+                     *
+                     * You know what?
+                     * We can proof that this question is $O(n)$ i.e. linear time
+                     *
+                     * Adversary argument:
+                     * https://leetcode.com/problems/find-minimum-in-rotated-sorted-array-ii/description/comments/1569484
+                     *
+                     * Suppose an algorithm A claims to beat worst case linear time,
+                     * consider an array with length N,
+                     * in which all elements are equal, say all are ones.
+                     *
+                     * The (deterministic) algorithm don't know this preliminary fact,
+                     * so A accesses the array and try to determine the next entry it wants to see;
+                     * being deterministic, there exists an index to which A last attempt to access,
+                     * say it's I.
+                     *
+                     * Now consider an array of N numbers each of which are equal
+                     * except at I it's one less than others.
+                     *
+                     * A must work out all N numbers in order to get the correct answer.
+                     */
+                    return arr[left..=right]
+                        .iter()
+                        .enumerate()
+                        .fold((0, arr[left]), |(idx_of_min, min), (idx, &val)| {
+                            if val < min {
+                                (idx, val)
+                            } else {
+                                (idx_of_min, min)
+                            }
+                        })
+                        .0
+                        + left;
                 }
             }
             left
@@ -103,4 +129,3 @@ macro_rules! lprintln {
         }
     }};
 }
-
