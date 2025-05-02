@@ -1,0 +1,6 @@
+[package]
+name = "lc_119_pascal"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
