@@ -1,0 +1,6 @@
+[package]
+name = "lc_92_reverse_linked_list_ii"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
