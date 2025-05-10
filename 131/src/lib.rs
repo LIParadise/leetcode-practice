@@ -5,69 +5,44 @@ impl Solution {
     /// s.t. for each partitioning, each of the partitioned substrings itself
     /// is a palindrome.
     pub fn partition(s: String) -> Vec<Vec<String>> {
-        let s = s.as_bytes();
-        let mut answers = Vec::with_capacity(s.len());
-        for subprob_len in 1..=s.len() {
-            // Dynamic programming
-            //
-            // For sub-problem, we have:
-            // substr = left + right
-            //
-            // right => last part, deemed as no further partition required, check if palindrome
-            // left => may be further partitioned, check DP table
-            //
-            // If right is indeed a palindrome,
-            // combine them to get some answers for the sub-problem
-            // How?
-            // DP table specifies different ways to decompose left into palindromes
-            // For each way in DP table, append right to it.
-            //
-            // Example:
-            // substr = "aab"
-            // consider (left = "aa") + (right = "b") = substr
-            // Via DP, we know left has 2 ways of decomposition:
-            // [["a", "a"], ["aa"]]
-            // Append "b" to all the possible ways, after which we get
-            // [["a", "a", "b"], ["aa", "b"]]
-            //
-            // Remember to iterate through all possible "right" and collect them.
-            //
-            // Complexity:
-            // Both time and space are exponential:
-            // consider input be same char over and over again, e.g. "aaaaaaaa..."
-            // space:
-            // T(1) = 1
-            // T(n) = 1 + T(1) + T(2) + ... + T(n-1)
-            // and it's straightforward to see T(n) = 2^n
-            // time: basically a traversal through all used space, hence same complexity.
-            let mut answers_to_subprob =
-                Vec::with_capacity(answers.last().map_or(1, |a: &Vec<Vec<String>>| a.len()));
-            for last_part_len in 1..=subprob_len {
-                let last_part = &s[subprob_len - last_part_len..subprob_len];
-                if Self::is_palindrome(last_part) {
-                    if last_part_len == subprob_len {
-                        answers_to_subprob
-                            .push(vec![std::str::from_utf8(last_part).unwrap().to_owned()])
-                    } else {
-                        let answers_to_prev_parts = &answers[subprob_len - last_part_len - 1];
-                        answers_to_subprob.extend(answers_to_prev_parts.iter().map(|strings| {
-                            let mut ret = strings.clone();
-                            ret.push(std::str::from_utf8(last_part).unwrap().to_owned());
-                            ret
-                        }));
-                    }
-                }
-            }
-            answers.push(answers_to_subprob);
-        }
-
-        answers.pop().unwrap_or(Vec::new())
+        Self::collect_palindromes(&s)
     }
 
-    fn is_palindrome(arr: &[u8]) -> bool {
-        arr.iter()
-            .zip(arr.iter().rev())
-            .take(arr.len() / 2)
+    fn collect_palindromes(s: &str) -> Vec<Vec<String>> {
+        (1..=s.len()).fold(vec![], |mut accm, end| {
+            if let Some((palindrome, remained)) = Self::palindrome_token(s, end) {
+                if remained.is_empty() {
+                    accm.push(vec![String::from(palindrome)])
+                } else {
+                    accm.extend(
+                        Self::collect_palindromes(remained)
+                            .into_iter()
+                            .map(|mut v| {
+                                let mut ret = vec![String::from(palindrome)];
+                                ret.append(&mut v);
+                                ret
+                            }),
+                    )
+                }
+            }
+            accm
+        })
+    }
+
+    fn palindrome_token(s: &str, u: usize) -> Option<(&str, &str)> {
+        s.split_at_checked(u).and_then(|(token, remained)| {
+            if Self::is_palindrome(token) {
+                Some((token, remained))
+            } else {
+                None
+            }
+        })
+    }
+
+    fn is_palindrome(s: &str) -> bool {
+        s.chars()
+            .zip(s.chars().rev())
+            .take(s.len() / 2)
             .all(|(a, b)| a == b)
     }
 }
@@ -75,6 +50,16 @@ impl Solution {
 #[cfg(test)]
 mod tests {
     use crate::Solution;
+    #[test]
+    fn test_is_palindrome() {
+        assert!(Solution::is_palindrome(""));
+        assert!(Solution::is_palindrome("x"));
+        assert!(Solution::is_palindrome("xx"));
+        assert!(!Solution::is_palindrome("ab"));
+        assert!(Solution::is_palindrome("xxx"));
+        assert!(Solution::is_palindrome("xyx"));
+        assert!(!Solution::is_palindrome("abc"));
+    }
     #[test]
     fn test_soln() {
         // Examples originate from here:
@@ -120,18 +105,14 @@ mod tests {
     }
 
     fn compare(my_answer: Vec<Vec<String>>, ans: Vec<Vec<&str>>) {
-        use std::collections::HashSet as Hash;
-        let mut my_hash = Hash::new();
-        my_hash.extend(
+        use std::collections::HashSet;
+        assert_eq!(my_answer.len(), ans.len());
+        let my_hash: HashSet<Vec<&str>> = HashSet::from_iter(
             my_answer
                 .iter()
-                .map(|v| v.iter().map(|s| s.as_str()).collect::<Vec<_>>()),
+                .map(|v| v.iter().map(String::as_str).collect::<Vec<_>>()),
         );
-        let mut ans_hash = Hash::new();
-        ans_hash.extend(ans);
-        assert!(ans_hash
-            .symmetric_difference(&my_hash)
-            .collect::<Vec<_>>()
-            .is_empty());
+        let ans_hash: HashSet<Vec<&str>> = HashSet::from_iter(ans);
+        assert!(ans_hash.symmetric_difference(&my_hash).next().is_none());
     }
 }
