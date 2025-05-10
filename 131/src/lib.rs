@@ -5,28 +5,30 @@ impl Solution {
     /// s.t. for each partitioning, each of the partitioned substrings itself
     /// is a palindrome.
     pub fn partition(s: String) -> Vec<Vec<String>> {
-        Self::collect_palindromes(&s)
+        let mut cache = vec![];
+        let mut ret = vec![];
+        Self::collect_palindromes(&s, &mut cache, &mut ret);
+        ret
     }
 
-    fn collect_palindromes(s: &str) -> Vec<Vec<String>> {
-        (1..=s.len()).fold(vec![], |mut accm, end| {
-            if let Some((palindrome, remained)) = Self::palindrome_token(s, end) {
+    /// Recursively munch palindrome tokens
+    ///
+    /// Note each element in the final return value array is itself
+    /// a partition over the original input,
+    /// thus we may store the partition-to-be s.t. such an element may be constructed fast.
+    fn collect_palindromes(s: &str, cache: &mut Vec<String>, ret: &mut Vec<Vec<String>>) {
+        (1..=s.len()).for_each(|i| {
+            if let Some((palindrome, remained)) = Self::palindrome_token(s, i) {
+                cache.push(String::from(palindrome));
                 if remained.is_empty() {
-                    accm.push(vec![String::from(palindrome)])
+                    // base case
+                    ret.push(cache.clone())
                 } else {
-                    accm.extend(
-                        Self::collect_palindromes(remained)
-                            .into_iter()
-                            .map(|mut v| {
-                                let mut ret = vec![String::from(palindrome)];
-                                ret.append(&mut v);
-                                ret
-                            }),
-                    )
+                    Self::collect_palindromes(remained, cache, ret);
                 }
+                cache.pop();
             }
-            accm
-        })
+        });
     }
 
     fn palindrome_token(s: &str, u: usize) -> Option<(&str, &str)> {
