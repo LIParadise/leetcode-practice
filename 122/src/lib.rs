@@ -7,28 +7,28 @@ impl Solution {
     // idea: buy low, sell high
     // specifically, capture all the increasing sub-intervals
     fn max_profit_worker(prices: &[i32]) -> i32 {
-        let mut iter = prices.iter().zip(prices.iter().skip(1)).peekable();
+        let mut iter = prices.iter().zip(prices.iter().skip(1));
         let mut profit = 0;
         let mut bought_at;
         loop {
             'buy_at_low: loop {
-                match iter.peek().map(|(a, b)| a.cmp(b)) {
+                match iter.next() {
                     None => return profit,
-                    Some(std::cmp::Ordering::Less) => {
-                        bought_at = *iter.next().unwrap().0;
+                    Some((a, b)) if a < b => {
+                        bought_at = *a;
                         break 'buy_at_low;
                     }
-                    _ => _ = iter.next(),
+                    _ => {}
                 }
             }
             'sell_at_high: loop {
-                match iter.peek().map(|(a, b)| a.cmp(b)) {
+                match iter.next() {
                     None => return profit + (*prices.last().unwrap() - bought_at),
-                    Some(std::cmp::Ordering::Greater) => {
-                        profit += *iter.next().unwrap().0 - bought_at;
+                    Some((a, b)) if a > b => {
+                        profit += *a - bought_at;
                         break 'sell_at_high;
                     }
-                    _ => _ = iter.next(),
+                    _ => {}
                 }
             }
         }
