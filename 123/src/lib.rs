@@ -9,48 +9,50 @@ impl Solution {
         }
     }
 
-    // Idea:
-    // cut the array into two: find some index,
-    // one subarray start at 0 and ends before that index,
-    // one subarray start at that index and ends at array end,
-    // each of which itself asking the best one-shot strategy in resp. subarray,
-    // both of which may be calculated in linear time.
+    // https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iii/solutions/796990/c-worst-to-best-solution-explained-for-dummies-like-me
     //
-    // assuming array length greater than 1
+    // Suppose you make some profit p1 by doing your first transaction in the stock market.
+    // Now you are excited to purchase another stock to earn more profit.
+    // Suppose the price of the second stock you aim to buy is x.
+    // Now, for you,
+    // the net effective price that you are spending from your pocket for this stock will be x-p1,
+    // because you already have p1 bucks in your hand.
+    // Now, if you sell the second stock at price y your net profit p2 will be p2 = y - (x-p1).
+    // You have to do nothing but maximize this profit p2.
+    //
+    // E.g. consider              [3, 3, 5, 0, 0, 3, 1, 4]
+    //        min hold cost        3  3  3  0  0  0  0  0
+    //        max one-shot profit  0  0  2  2  2  3  3  4
+    //                                   |              |
+    //                                   |              \-> min hold cost was 0, price 4, max one-shot profit is thus 4
+    //                                   \-> min hold cost was 3, price 5, max one-shot profit is thus 2
+    //
+    // The gist is to consider "what's the effective price, considering we've made some profit"?
+    //
+    // prices                                       [3, 3, 5, 0, 0, 3, 1, 4]
+    // min hold cost                                 3  3  3  0  0  0  0  0
+    // max one-shot profit                           0  0  2  2  2  3  3  4
+    // eff. price considering we've made some profit 3  3  3 -2 -2  0 -2  0
+    // min hold cost                                 3  3  3 -2 -2 -2 -2 -2
+    // max profit                                    0  0  0  0  0  2  2  2
+    //
+    // In essence, solve for (one-shot transaction over array), twice!
     fn max_profit_worker(prices: &[i32]) -> i32 {
-        let sub_array_profit_from_front = prices
+        prices
             .iter()
-            .scan((0, *prices.first().unwrap()), |(profit, min), price| {
-                *profit = std::cmp::max(*price - *min, *profit);
-                *min = std::cmp::min(*price, *min);
-                Some((*profit, *min))
-            })
-            .map(|(profit, _)| profit);
-
-        // note this is reversed!
-        let sub_array_profit_till_end = prices
-            .iter()
-            .rev()
-            .scan((0, *prices.last().unwrap()), |(profit, max), price| {
-                *profit = std::cmp::max(*max - *price, *profit);
-                *max = std::cmp::max(*price, *max);
-                Some((*profit, *max))
-            })
-            .map(|(profit, _)| profit)
-            .collect::<Vec<_>>();
-
-        std::iter::once(0)
-            .chain(sub_array_profit_from_front)
-            .zip(
-                sub_array_profit_till_end
-                    .into_iter()
-                    // `Iterator::rev`, for the memoization is reversed
-                    .rev()
-                    .chain(std::iter::once(0)),
+            .skip(1)
+            .fold(
+                (*prices.first().unwrap(), 0, *prices.first().unwrap(), 0),
+                |(mut cost_0, mut profit_0, mut cost_1, mut profit_0_and_1), price| {
+                    cost_0 = std::cmp::min(cost_0, *price);
+                    profit_0 = std::cmp::max(profit_0, *price - cost_0);
+                    let eff_price_if_hold = *price - profit_0;
+                    cost_1 = std::cmp::min(cost_1, eff_price_if_hold);
+                    profit_0_and_1 = std::cmp::max(profit_0_and_1, *price - cost_1);
+                    (cost_0, profit_0, cost_1, profit_0_and_1)
+                },
             )
-            .map(|(profit_front, profit_back)| profit_front + profit_back)
-            .max()
-            .unwrap()
+            .3
     }
 }
 
