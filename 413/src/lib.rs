@@ -8,12 +8,12 @@ impl Solution {
         let mut start = 0;
         let mut ret = 0;
         while start + 3 <= nums.len() {
-            if let Some(u) = Self::is_arithmetic(&nums[start..start + 3]) {
+            if let Some(i) = Self::is_arithmetic(&nums[start..start + 3]) {
                 let extra_len = nums
                     .iter()
                     .skip(start + 2)
                     .zip(nums.iter().skip(start + 3))
-                    .take_while(|&(&x, &y)| x.abs_diff(y) == u)
+                    .take_while(|&(&a, &b)| b.wrapping_sub(a) == i)
                     .count();
                 ret += (extra_len + 2) * (extra_len + 1) / 2;
                 // [0..3] ok, `extra_len` zero, meaning [1..4] is not ok, either,
@@ -29,13 +29,13 @@ impl Solution {
         }
         ret.try_into().unwrap()
     }
-    fn is_arithmetic(nums: &[i32]) -> Option<u32> {
+    fn is_arithmetic(nums: &[i32]) -> Option<i32> {
         if nums.len() >= 3 {
-            let diff = nums[0].abs_diff(nums[1]);
+            let diff = nums[1].wrapping_sub(nums[0]);
             nums.iter()
                 .skip(1)
                 .zip(nums)
-                .all(|(x, &y)| x.abs_diff(y) == diff)
+                .all(|(b, &a)| b.wrapping_sub(a) == diff)
                 .then_some(diff)
         } else {
             None
@@ -50,11 +50,11 @@ mod tests {
     fn test_soln() {
         assert_eq!(Solution::number_of_arithmetic_slices(vec![1, 2, 3, 4]), 3);
         assert_eq!(Solution::number_of_arithmetic_slices(vec![1, 2, 3, 3]), 1);
-        assert_eq!(Solution::number_of_arithmetic_slices(vec![1, 2, 3, 2]), 3);
+        assert_eq!(Solution::number_of_arithmetic_slices(vec![1, 2, 3, 2]), 1);
         assert_eq!(Solution::number_of_arithmetic_slices(vec![]), 0);
         assert_eq!(Solution::number_of_arithmetic_slices(vec![1]), 0);
         assert_eq!(Solution::number_of_arithmetic_slices(vec![1, 2,]), 0);
-        assert_eq!(Solution::number_of_arithmetic_slices(vec![1, 2, 1]), 1);
+        assert_eq!(Solution::number_of_arithmetic_slices(vec![1, 2, 1]), 0);
         assert_eq!(Solution::number_of_arithmetic_slices(vec![1, 2, 2]), 0);
         assert_eq!(Solution::number_of_arithmetic_slices(vec![1, 2, 3]), 1);
         assert_eq!(Solution::number_of_arithmetic_slices(vec![1, 2, 4]), 0);
@@ -77,7 +77,7 @@ mod tests {
         );
         assert_eq!(
             Solution::number_of_arithmetic_slices(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]),
-            56
+            55
         );
         const WUT: [i32; 5000] = [
             27, 2, -32, 38, -21, 27, -44, 34, -31, -5, -2, -20, 7, -31, 14, 5, 30, -12, -23, -10,
