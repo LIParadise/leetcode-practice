@@ -1,0 +1,6 @@
+[package]
+name = "lc_1115_print_foobar_alternately"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
